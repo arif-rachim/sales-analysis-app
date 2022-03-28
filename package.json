@@ -21,10 +21,11 @@
     "xlsx": "^0.18.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "datasource:import": "node import-datasource.js",
+    "start:server": "node server",
+    "start:client": "react-scripts start",
+    "build:client": "react-scripts build",
+    "test:client": "react-scripts test"
   },
   "eslintConfig": {
     "extends": [
