@@ -59,6 +59,7 @@ const CellComponentForColumnHeaderBase: FC<CellComponentProps> = (props) => {
     const gridColumn: GridColumn = column;
     const CellComponentForColHeader = gridColumn.headerCellComponent || CellComponentForColumnHeader;
     const mousePositionRef = useRef({current: 0, next: 0, dragActive: false});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const handleDrag = useCallback(dragListener(mousePositionRef, gridContextRef.current.onCellResize, index, containerRef, handlerRef, "horizontal"), []);
     useEffect(() => {
         handlerRef.current.style.left = `${containerRef.current.getBoundingClientRect().width - Math.ceil(0.5 * HANDLER_LENGTH)}px`;
@@ -102,6 +103,7 @@ const CellComponentToResizeRow: React.FC<CellComponentProps> = (props: CellCompo
 
     const gridContextRef = useContext(GridContext);
     const mousePositionRef = useRef({current: 0, next: 0, dragActive: false});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const handleDrag = useCallback(dragListener(mousePositionRef, gridContextRef.current.onRowResize, index, containerRef, handlerBottomRef, "vertical"), []);
     useEffect(() => {
         handlerBottomRef.current.style.top = `${containerRef.current.getBoundingClientRect().height - Math.ceil(0.5 * HANDLER_LENGTH)}px`;
@@ -375,7 +377,7 @@ function filterDataSource(dataSource: Array<any>, $gridFilter: Observer<Map<stri
 
 function convertColumnsPropsToColumns(columnsProp: Array<GridColumn | GridColumnGroup>): Array<GridColumn> {
     let columns: Array<GridColumn> = [];
-    columnsProp.map((column: any) => {
+    columnsProp.forEach((column: any) => {
         if ('columns' in column) {
             columns = columns.concat(convertColumnsPropsToColumns(column.columns));
         } else {
@@ -474,8 +476,8 @@ export function Grid(gridProps: GridProps) {
         }
     });
     const hideLeftColumnIndex = pinnedLeftColumnIndex && pinnedLeftColumnIndex >= 0 ? pinnedLeftColumnIndex : -1;
-    useEffect(() => setViewPortDimension(viewportRef.current.getBoundingClientRect()), []);
-    useEffect(() => setFocusedDataItem(focusedDataItem), [focusedDataItem]);
+    useEffect(() => setViewPortDimension(viewportRef.current.getBoundingClientRect()), [setViewPortDimension]);
+    useEffect(() => setFocusedDataItem(focusedDataItem), [focusedDataItem,setFocusedDataItem]);
     useObserverListener([$viewPortDimension, $columns], () => {
         if ($viewPortDimension.current.width > 0) {
             const columnsWidth = new Map<number, number>();
@@ -513,9 +515,10 @@ export function Grid(gridProps: GridProps) {
         const pinnedLeftColWidth = Array.from($customColWidth.current.entries()).filter((value) => value[0] <= hideLeftColumnIndex).reduce((acc, val) => acc + val[1], 0);
         setPinnedLeftColumnWidth(pinnedLeftColWidth);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const headerData: Array<any> = useMemo(constructHeaderData(columnsProp), []);
-    useEffect(() => setData(dataProp), [dataProp]);
-    useEffect(() => setColumns(convertColumnsPropsToColumns(columnsProp)), [columnsProp]);
+    useEffect(() => setData(dataProp), [dataProp,setData]);
+    useEffect(() => setColumns(convertColumnsPropsToColumns(columnsProp)), [columnsProp,setColumns]);
     const columnDataToResizeRow: Array<GridColumn> = useMemo(() => ([{
         field: '_',
         width: FIRST_COLUMN_WIDTH,

@@ -162,16 +162,9 @@ export interface SheetRef{
 }
 
 export const Sheet = React.forwardRef(function Sheet<DataItem>(props: SheetProperties<DataItem>,ref:ForwardedRef<SheetRef>) {
-    useImperativeHandle(ref,() => {
-        function updateScrollerPosition(scrollerPosition:{top:number;left:number}){
-            viewPortRef.current.scrollLeft = scrollerPosition.left;
-            viewPortRef.current.scrollTop = scrollerPosition.top;
-            setScrollerPosition(scrollerPosition);
-        }
-        return {
-            setScrollerPosition:updateScrollerPosition
-        }
-    },[]);
+    const propsRef = useRef(props);
+    propsRef.current = props;
+
     const sheetContextRef = useRef<SheetContextType>({props});
     sheetContextRef.current = {props};
     const [$reRender, setReRender] = useObserver(new Date());
@@ -182,16 +175,26 @@ export const Sheet = React.forwardRef(function Sheet<DataItem>(props: SheetPrope
     const [$scrollerPosition, setScrollerPosition] = useObserver({left: 0,top: 0});
     const [$emptyMapObserver] = useObserver(new Map<number, number>());
     const [elements, setElements] = useState(new Array<ReactElement>());
-    const forceUpdate = useCallback(() => setReRender(new Date()), []);
-    useEffect(forceUpdate, [props.data, props.columns]);
+    const forceUpdate = useCallback(() => setReRender(new Date()), [setReRender]);
+    useEffect(forceUpdate, [props.data, props.columns,forceUpdate]);
 
+    useImperativeHandle(ref,() => {
+        function updateScrollerPosition(scrollerPosition:{top:number;left:number}){
+            viewPortRef.current.scrollLeft = scrollerPosition.left;
+            viewPortRef.current.scrollTop = scrollerPosition.top;
+            setScrollerPosition(scrollerPosition);
+        }
+        return {
+            setScrollerPosition:updateScrollerPosition
+        }
+    },[setScrollerPosition]);
     const [$totalWidthOfContent, setTotalWidthOfContent] = useObserver(calculateLength($customColWidth?.current, props.columns, $defaultColWidth.current));
     useObserverListener($customColWidth || $emptyMapObserver, () => setTotalWidthOfContent(calculateLength($customColWidth?.current, props.columns, $defaultColWidth.current)));
 
     const [$totalHeightOfContent, setTotalHeightOfContent] = useObserver(calculateLength($customRowHeight?.current, props.data, $defaultRowHeight.current));
     useObserverListener($customRowHeight || $emptyMapObserver, () => setTotalHeightOfContent(calculateLength($customRowHeight?.current, props.data, $defaultRowHeight.current)));
 
-    useEffect(() => setTotalHeightOfContent(calculateLength($customRowHeight?.current, props.data, $defaultRowHeight.current)), [props.data]);
+    useEffect(() => setTotalHeightOfContent(calculateLength($customRowHeight?.current, props.data, $defaultRowHeight.current)), [props.data,$customRowHeight,$defaultRowHeight,setTotalHeightOfContent]);
 
     const viewPortRef = useRef(defaultDom);
 
@@ -199,7 +202,7 @@ export const Sheet = React.forwardRef(function Sheet<DataItem>(props: SheetPrope
         const viewPortDom = viewPortRef.current;
         let {offsetWidth, offsetHeight} = viewPortDom;
         setViewPortDimension({width: offsetWidth, height: offsetHeight});
-    }, [props.styleContainer]);
+    }, [props.styleContainer,setViewPortDimension]);
 
     useObserverListener([$reRender, $viewPortDimension, $scrollerPosition, $defaultRowHeight, $defaultColWidth, $customRowHeight || $emptyMapObserver, $customColWidth || $emptyMapObserver], () => {
 
@@ -222,12 +225,12 @@ export const Sheet = React.forwardRef(function Sheet<DataItem>(props: SheetPrope
 
     const handleScroller = useCallback(function handleScroller() {
         const viewPortDom = viewPortRef.current;
-        if (props.onScroll) props.onScroll({
+        if (propsRef.current.onScroll) propsRef.current.onScroll({
             scrollLeft: viewPortDom.scrollLeft,
             scrollTop: viewPortDom.scrollTop
         });
         setScrollerPosition({left: viewPortDom.scrollLeft, top: viewPortDom.scrollTop});
-    }, []);
+    }, [setScrollerPosition]);
     return <SheetContext.Provider value={sheetContextRef}>
         <div ref={viewPortRef}
              style={{
@@ -310,7 +313,7 @@ const CellRenderer = React.memo(function CellRenderer(props: CellRendererProps) 
     const [isFocused, setIsFocused] = useState(() => {
         return props.dataItem === sheetContext.current.props?.$focusedDataItem?.current;
     });
-    useEffect(() => setIsFocused(props.dataItem === sheetContext.current.props?.$focusedDataItem?.current), [props.dataItem]);
+    useEffect(() => setIsFocused(props.dataItem === sheetContext.current.props?.$focusedDataItem?.current), [props.dataItem,sheetContext]);
     useObserverListener(sheetContext.current.props?.$focusedDataItem || $emptyObserver, () => {
         const focusedItem: any = sheetContext.current.props?.$focusedDataItem?.current;
         const isFocused = focusedItem === props.dataItem;
@@ -445,7 +448,7 @@ function calculateCellToBeSkippedDuringRendering(param: { lastColIndexBeforeView
                 if (!cellsThatRequestForOtherCellsToBeMerged.has(rowIndex)) {
                     cellsThatRequestForOtherCellsToBeMerged.set(rowIndex, new Set());
                 }
-                (cellsThatRequestForOtherCellsToBeMerged.get(rowIndex) || new Set).add(colIndex);
+                (cellsThatRequestForOtherCellsToBeMerged.get(rowIndex) || new Set()).add(colIndex);
                 for (let rowIndexToMerge = rowIndex; rowIndexToMerge < rowIndex + rowSpan; rowIndexToMerge++) {
                     for (let colIndexToMerge = colIndex; colIndexToMerge < colIndex + colSpan; colIndexToMerge++) {
                         if (!cellsToBeMerged.has(rowIndexToMerge)) {
