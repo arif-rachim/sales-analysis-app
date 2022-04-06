@@ -1,7 +1,10 @@
 // Require the framework and instantiate it
-const {Sales,sequelize} = require("./src/model");
+const {Sales,sequelize,SalesSchema} = require("./src/model");
 const fastify = require('fastify')({ logger: true });
 
+fastify.register(require('fastify-cors'), {
+    origin : true
+})
 const pageSize = 50;
 
 // Declare a route
@@ -25,39 +28,17 @@ fastify.get('/v1/sales/stores/:page',async (req) => {
     return await loadPaginatedQuery(query, page);
 });
 
-fastify.get('/v1/sales/products/:page',async (req) => {
-    const query = "SELECT DISTINCT(storeName),storeCode,city from sales where city not NULL order by storeCode ASC";
-    const {page} = req.params;
-    return await loadPaginatedQuery(query, page);
-});
-
-fastify.get('/v1/sales/brands/:page',async (req) => {
-    const query = "select DISTINCT(brand) from sales";
-    const {page} = req.params;
-    return await loadPaginatedQuery(query,page);
-});
-
-fastify.get('/v1/sales/material/:page',async () => {
-    const query = "select DISTINCT(code),name,category,brand from sales";
-    const {page} = req.params;
-    return await loadPaginatedQuery(query,page);
-});
-
 fastify.get('/v1/dimension',async () => {
+    return Object.keys(SalesSchema).filter(key => key !== 'id').map(key => {
+        return {id:key,name:SalesSchema[key].comment,isQuantifiable:SalesSchema[key].isQuantifiable}
+    })
+});
 
-    return [
-        {id:'storeCode',name:'Store Code'},
-        {id:'storeName',name:'Store Name'},
-        {id:'store',name:'Store Type'},
-        {id:'location',name:'Store Location'},
-        {id:'city',name:'Store City'},
-        {id:'groupCode',name:'Material Group Code'},
-        {id:'name',name:'Material Name'},
-        {id:'category',name:'Material Category'},
-        {id:'date',name:'Date'},
-        {id:'quantity',name:'Sales Quantity'},
-        {id:'value',name:'Sales Value'},
-    ];
+fastify.get('/v1/distinct/:columnName',async (req) => {
+    const columnName = req.params.columnName;
+    const query = `select DISTINCT(${columnName.split('_').join('||"#"||')}) as ${columnName} from sales order by ${columnName} asc`;
+    const [data] = await sequelize.query(query);
+    return data;
 });
 
 // Run the server!

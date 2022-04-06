@@ -1,4 +1,4 @@
-import {Grid} from "./grid/Grid";
+import {Grid, GridColumn, GridColumnGroup} from "./grid/Grid";
 
 import React, {createContext, useEffect} from "react";
 import Vertical from "./layout/Vertical";
@@ -251,18 +251,63 @@ export default function App() {
             </Vertical>
         </Horizontal>
         <DimensionSelector $displayDimensionSelector={$displayDimensionSelector} onDimensionChanged={async (props) => {
-            const {filters,rows,columns,values} = props;
+            const {filters, rows, columns, values} = props;
+
             const column = (columns as any)[0];
-            const columnsData = await fetchData('distinct/'+column.id);
+            if (column === undefined) {
+                return;
+            }
             const row = (rows as any)[0];
-            const rowsData = await fetchData('distinct/'+row.id);
+            if (row === undefined) {
+                return;
+            }
+
+            const [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + columns.map(col => col.id).join('_')), fetchData('distinct/' + rows.map(row => row.id).join('_'))]);
+
+            const gridColumnsData:Array<GridColumn|GridColumnGroup> = columnsData.reduce((acc:Array<GridColumn|GridColumnGroup>,colData:any) => {
+                const key:string = Object.keys(colData)[0];
+                const val:string = colData[key];
+                const keys:Array<string> = key.split('_');
+                const values:Array<string> = val.split('#');
+                const lastIndexKey = keys.length;
+                keys.reduce((acc:Array<GridColumn|GridColumnGroup>,key:string,index:number) => {
+                    const isNotLastIndex = index < (lastIndexKey - 1);
+                    const title = values[index];
+                    const existingChild:any = acc.find((ac:any) => ac.title === title);
+                    if(existingChild){
+                        const child:GridColumnGroup = existingChild;
+                        return child.columns;
+                    }
+                    const child:any = {};
+                    if(isNotLastIndex){
+                        const group:GridColumnGroup = child;
+                        group.columns = [];
+                        group.title = title;
+
+                    }else{
+                        const column:GridColumn = child;
+                        column.field = val;
+                        //column.field = 'groupCode';
+                        column.title = title;
+                        column.width = 200;
+                    }
+                    acc.push(child);
+                    return child.columns;
+                },acc);
+                return acc;
+            },[]);
+
+            // setGridColumns(gridColumnsData);
+            // setGridRows(rowsData);
+            // const gridHeader: Array<GridColumn | GridColumnGroup> = [];
+
             // now we need to setup the column and the rows altogether
             // first we need to build the column
             // next we need to build the rows
             // then we need to create the cell
             // then we need to add filter into the cell
             // then we need to add drilling capability
-            // rows get the
+            // rows get th
             return true;
         }}/>
     </Vertical>
