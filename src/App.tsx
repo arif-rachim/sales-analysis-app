@@ -5,6 +5,7 @@ import Vertical from "./layout/Vertical";
 import Horizontal from "./layout/Horizontal";
 import {Observer, useObserver} from "./observer/useObserver";
 import {ObserverValue, useObserverListener, useObserverValue} from "./observer";
+import {CellComponentStyledProps} from "./grid/Sheet";
 
 const dimensions = [
     {id: 'storeCode', name: 'Store Code'},
@@ -267,10 +268,10 @@ export default function App() {
             const [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + columns.map(col => col.id).join('_')), fetchData('distinct/' + rows.map(row => row.id).join('_'))]);
 
             const gridColumnsData:Array<GridColumn|GridColumnGroup> = columnsData.reduce((acc:Array<GridColumn|GridColumnGroup>,colData:any) => {
-                const key:string = Object.keys(colData)[0];
-                const val:string = colData[key];
-                const keys:Array<string> = key.split('_');
-                const values:Array<string> = val.split('#');
+                const colKey:string = Object.keys(colData)[0];
+                const colVal:string = colData[colKey];
+                const keys:Array<string> = colKey.split('_');
+                const values:Array<string> = colVal.split('#');
                 const lastIndexKey = keys.length;
                 keys.reduce((acc:Array<GridColumn|GridColumnGroup>,key:string,index:number) => {
                     const isNotLastIndex = index < (lastIndexKey - 1);
@@ -288,10 +289,10 @@ export default function App() {
 
                     }else{
                         const column:GridColumn = child;
-                        column.field = val;
-                        //column.field = 'groupCode';
+                        column.field = colVal +'⚮'+colKey;
                         column.title = title;
                         column.width = 200;
+                        column.cellComponent = CellComponent
                     }
                     acc.push(child);
                     return child.columns;
@@ -318,4 +319,11 @@ export default function App() {
 async function fetchData(url:string){
     const result = await window.fetch(`http://localhost:3001/v1/${url}`);
     return await result.json();
+}
+
+function CellComponent(props:CellComponentStyledProps){
+
+    return <Vertical style={props.cellStyle}>
+        {props.value}
+    </Vertical>
 }
