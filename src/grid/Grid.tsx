@@ -27,7 +27,8 @@ export interface GridProps {
     pinnedLeftColumnIndex?: number,
     rowResizerHidden?: boolean,
     filterHidden?: boolean,
-    defaultHeaderRowHeight? : number
+    defaultHeaderRowHeight? : number,
+    debugMode?:boolean
 
 }
 
@@ -274,15 +275,19 @@ export function CellComponentForColumnHeader(props: HeaderCellComponentProps) {
 
     const shouldHaveFilter = (props.rowIndex + (props?.rowSpan || 0)) === props.dataSource.length;
     return <Vertical style={{height: '100%'}}>
-        <Horizontal style={{flexGrow: 1, padding: '0px 5px', backgroundColor: '#eee', color: '#333'}} vAlign={'center'}
+        <Vertical style={{flexGrow: 1, padding: '0px 5px', backgroundColor: '#eee', color: '#333'}} hAlign={'center'}
+                  vAlign={'center'}
                     onClick={handleSortClicked}>
-            <Vertical>
-                {props.title}
-            </Vertical>
-            {shouldHaveFilter &&
-                <SortComponent field={gridColumn.field}/>
-            }
-        </Horizontal>
+
+                <Horizontal>
+                    {props.title}
+                    {shouldHaveFilter &&
+                        <SortComponent field={gridColumn.field}/>
+                    }
+                </Horizontal>
+
+
+        </Vertical>
         {shouldHaveFilter && filterHidden !== true &&
             <FilterCellComponent title={props.title} field={props.field} colIndex={props.colIndex} column={gridColumn}
                                  rowIndex={props.rowIndex} dataSource={props.dataSource} colSpan={props.colSpan}
@@ -345,8 +350,8 @@ function compareValue(props: { prev: any, next: any, gridSort: Array<GridSortIte
         rowIndex: dataSource.indexOf(next),
         dataSource
     });
-    const prevLowerCase = prevValue.toLowerCase();
-    const nextLowerCase = nextValue.toLowerCase();
+    const prevLowerCase = (prevValue || '').toLowerCase();
+    const nextLowerCase = (nextValue || '').toLowerCase();
     if (prevLowerCase === nextLowerCase) {
         return compareValue({prev, next, gridSort, index: index + 1, columns, dataSource});
     }
@@ -446,7 +451,8 @@ export function Grid(gridProps: GridProps) {
         defaultColWidth: _defaultCoWidth,
         pinnedLeftColumnIndex,
         rowResizerHidden,
-        defaultHeaderRowHeight
+        defaultHeaderRowHeight,
+        debugMode
     } = gridProps;
     const defaultRowHeight = _defaultRowHeight || DEFAULT_HEIGHT;
     const defaultColWidth = _defaultCoWidth || DEFAULT_WIDTH;
@@ -515,8 +521,9 @@ export function Grid(gridProps: GridProps) {
         const pinnedLeftColWidth = Array.from($customColWidth.current.entries()).filter((value) => value[0] <= hideLeftColumnIndex).reduce((acc, val) => acc + val[1], 0);
         setPinnedLeftColumnWidth(pinnedLeftColWidth);
     });
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const headerData: Array<any> = useMemo(constructHeaderData(columnsProp), []);
+    const headerData: Array<any> = useMemo(constructHeaderData(columnsProp), [columnsProp]);
     useEffect(() => setData(dataProp), [dataProp,setData]);
     useEffect(() => setColumns(convertColumnsPropsToColumns(columnsProp)), [columnsProp,setColumns]);
     const columnDataToResizeRow: Array<GridColumn> = useMemo(() => ([{
@@ -557,6 +564,9 @@ export function Grid(gridProps: GridProps) {
             },
         }))
     });
+    if(debugMode){
+        console.log('Columns Header column updated',columnsHeaderColumn,'here we have header data',headerData);
+    }
 
     const gridContextRef = useRef({
         props: gridProps,
@@ -634,6 +644,7 @@ export function Grid(gridProps: GridProps) {
                                    defaultRowHeight={defaultHeaderRowHeight || HEADER_HEIGHT}
                                    defaultColWidth={defaultColWidth}
                                    hideLeftColumnIndex={-1}
+
                             />
                         </Vertical>
                     }}/>
@@ -648,6 +659,8 @@ export function Grid(gridProps: GridProps) {
                                defaultRowHeight={defaultHeaderRowHeight || HEADER_HEIGHT}
                                defaultColWidth={defaultColWidth}
                                hideLeftColumnIndex={hideLeftColumnIndex}
+                               debugMode={debugMode}
+                               sheetHeightFollowsTotalRowsHeight={true}
                         />
                     </Vertical>
                 </Horizontal>

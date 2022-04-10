@@ -220,7 +220,8 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
 export default function App() {
 
     const [$displayDimensionSelector, setDisplayDimensionSelector] = useObserver(false);
-
+    const [$gridColumns,setGridColumns] = useObserver<Array<GridColumn|GridColumnGroup>>([]);
+    const [$gridRows,setGridRows] = useObserver([]);
     useEffect(() => {
         //(async () => {
         // here we need to fetch dimension
@@ -235,9 +236,10 @@ export default function App() {
                   onClick={() => {
                       setDisplayDimensionSelector(false);
                   }}>
+            <ObserverValue observers={[$gridColumns,$gridRows]} render={() => {
+                return <Grid columns={$gridColumns.current} data={$gridRows.current} debugMode={false}/>;
+            }}/>
 
-            <Grid columns={[]} data={[]}
-            />
         </Vertical>
         <Horizontal style={{borderBottom: '1px solid #CCC'}}>
             <Vertical style={{width: '50%', padding: '1rem', borderRight: '1px solid #CCC'}} hAlign={'center'}
@@ -251,7 +253,7 @@ export default function App() {
             </Vertical>
         </Horizontal>
         <DimensionSelector $displayDimensionSelector={$displayDimensionSelector} onDimensionChanged={async (props) => {
-            const {filters, rows, columns, values} = props;
+            const {rows, columns} = props;
 
             const column = (columns as any)[0];
             if (column === undefined) {
@@ -297,8 +299,8 @@ export default function App() {
                 return acc;
             },[]);
 
-            // setGridColumns(gridColumnsData);
-            // setGridRows(rowsData);
+            setGridColumns(gridColumnsData);
+            setGridRows(rowsData);
             // const gridHeader: Array<GridColumn | GridColumnGroup> = [];
 
             // now we need to setup the column and the rows altogether
@@ -315,6 +317,5 @@ export default function App() {
 
 async function fetchData(url:string){
     const result = await window.fetch(`http://localhost:3001/v1/${url}`);
-    const json = await result.json();
-    return json;
+    return await result.json();
 }

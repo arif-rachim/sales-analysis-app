@@ -1,7 +1,7 @@
 const {readFile, utils} = require("xlsx");
 const path = require('path');
 const fs = require('fs');
-const {Sales,ImportedFile} = require("./model");
+const {Sales,ImportedFile} = require("./src/model");
 function loadKamus(){
     return new Promise(resolve => {
         const materialGroupCategory = new Map();
@@ -10,13 +10,13 @@ function loadKamus(){
         const file = readFile('./kamus.xls');
 
         const categoriesRows = utils.sheet_to_json(file.Sheets[file.SheetNames[0]],{header:1,defval:''});
-        categoriesRows.map(categoryRow => {
-            materialGroupCategory.set(categoryRow[0],categoryRow[1]);
+        categoriesRows.forEach(categoryRow => {
+            materialGroupCategory.set(categoryRow[0],categoryRow[1].trim());
         });
         const storeNameCodeCities = utils.sheet_to_json(file.Sheets[file.SheetNames[1]],{header:1,defval:''});
-        storeNameCodeCities.map(storeNameCodeCityRow => {
-            storeCodeCity.set(storeNameCodeCityRow[1],storeNameCodeCityRow[2]);
-            storeCodeName.set(storeNameCodeCityRow[1],storeNameCodeCityRow[0]);
+        storeNameCodeCities.forEach(storeNameCodeCityRow => {
+            storeCodeCity.set(storeNameCodeCityRow[1],storeNameCodeCityRow[2].trim());
+            storeCodeName.set(storeNameCodeCityRow[1],storeNameCodeCityRow[0].trim());
         });
         resolve({materialGroupCategory,storeCodeName,storeCodeCity});
     });
@@ -56,7 +56,7 @@ function loadData({materialGroupCategory,storeCodeCity,storeCodeName,fileHasBeen
                     const storeNames = dataRows[storeNameRowIndex];
                     const months = dataRows[monthCodeRowIndex];
                     const qtyOrValue = dataRows[qtyOrValueRowIndex];
-
+                    debugger;
                     dataRows.filter((row,rowIndex) => rowIndex > 6 && row[materialEanUpcColIndex].length > 1).forEach(row => {
                         for (let colIndex = startingColumnIndex; colIndex < row.length; colIndex++) {
                             const isQuantity = qtyOrValue[colIndex].toUpperCase().indexOf('QTY') >= 0;
