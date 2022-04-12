@@ -1,4 +1,11 @@
-import {CellComponentProps, Column, dataItemToValueDefaultImplementation, Sheet, SheetRef} from "./Sheet";
+import {
+    CellComponentProps, CellSpanFunctionProps,
+    CellSpanFunctionResult,
+    Column,
+    dataItemToValueDefaultImplementation,
+    Sheet,
+    SheetRef
+} from "./Sheet";
 import React, {
     createContext,
     FC,
@@ -251,6 +258,7 @@ export function CellComponentForColumnHeader(props: HeaderCellComponentProps) {
     const FilterCellComponent: React.FC<HeaderCellComponentProps> = gridColumn.filterCellComponent || CellComponentForColumnHeaderFilter;
     const gridContextRef = useContext(GridContext);
     const filterHidden = gridContextRef.current.props.filterHidden;
+
     function handleSortClicked() {
         if (!gridContextRef.current.setGridSort) {
             return;
@@ -454,6 +462,7 @@ export function Grid(gridProps: GridProps) {
         defaultHeaderRowHeight,
         debugMode
     } = gridProps;
+
     const defaultRowHeight = _defaultRowHeight || DEFAULT_HEIGHT;
     const defaultColWidth = _defaultCoWidth || DEFAULT_WIDTH;
     const [$columns, setColumns] = useObserver(() => convertColumnsPropsToColumns(columnsProp));
@@ -481,7 +490,7 @@ export function Grid(gridProps: GridProps) {
         setScrollerPosition: () => {
         }
     });
-    const hideLeftColumnIndex = pinnedLeftColumnIndex && pinnedLeftColumnIndex >= 0 ? pinnedLeftColumnIndex : -1;
+    const hideLeftColumnIndex = pinnedLeftColumnIndex !== undefined && pinnedLeftColumnIndex >= 0 ? pinnedLeftColumnIndex : -1;
     useEffect(() => setViewPortDimension(viewportRef.current.getBoundingClientRect()), [setViewPortDimension]);
     useEffect(() => setFocusedDataItem(focusedDataItem), [focusedDataItem,setFocusedDataItem]);
     useObserverListener([$viewPortDimension, $columns], () => {
@@ -537,31 +546,7 @@ export function Grid(gridProps: GridProps) {
         return columns.map<Column>((c: Column) => ({
             ...c,
             cellComponent: CellComponentForColumnHeaderBase,
-            cellSpanFunction: props => {
-                let rowSpan = 1;
-                let colSpan = 1;
-
-                function getCellTitle(rowIndex: number, colIndex: number) {
-                    const rowData = props.data[rowIndex];
-                    const column = props.columns[colIndex];
-                    if (rowData && column) {
-                        return rowData[column.field];
-                    }
-                    return '';
-                }
-
-                const cellTitle = getCellTitle(props.rowIndex, props.colIndex);
-                while (rowSpan <= props.lastRowIndexInsideViewPort && cellTitle === getCellTitle(props.rowIndex + rowSpan, props.colIndex)) {
-                    rowSpan++;
-                }
-                while (colSpan <= props.lastColIndexInsideViewPort && cellTitle === getCellTitle(props.rowIndex, props.colIndex + colSpan)) {
-                    colSpan++;
-                }
-                return {
-                    rowSpan,
-                    colSpan
-                }
-            },
+            cellSpanFunction: defaultCellSpanFunction,
         }))
     });
     if(debugMode){
@@ -745,3 +730,28 @@ export function Grid(gridProps: GridProps) {
     </Vertical>
 }
 
+export function defaultCellSpanFunction(props:CellSpanFunctionProps):CellSpanFunctionResult{
+    let rowSpan = 1;
+    let colSpan = 1;
+
+    function getCellTitle(rowIndex: number, colIndex: number) {
+        const rowData = props.data[rowIndex];
+        const column = props.columns[colIndex];
+        if (rowData && column) {
+            return rowData[column.field];
+        }
+        return '';
+    }
+
+    const cellTitle = getCellTitle(props.rowIndex, props.colIndex);
+    while (rowSpan <= props.lastRowIndexInsideViewPort && cellTitle === getCellTitle(props.rowIndex + rowSpan, props.colIndex)) {
+        rowSpan++;
+    }
+    while (colSpan <= props.lastColIndexInsideViewPort && cellTitle === getCellTitle(props.rowIndex, props.colIndex + colSpan)) {
+        colSpan++;
+    }
+    return {
+        rowSpan,
+        colSpan
+    }
+}

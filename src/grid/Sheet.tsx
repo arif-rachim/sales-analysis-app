@@ -35,7 +35,7 @@ function cellSpanFunctionDefaultImplementation() {
     return {colSpan: 1, rowSpan: 1}
 }
 
-interface CellSpanFunctionProps {
+export interface CellSpanFunctionProps {
     lastRowIndexBeforeViewPort: number;
     lastRowIndexInsideViewPort: number;
     lastColIndexBeforeViewPort: number;

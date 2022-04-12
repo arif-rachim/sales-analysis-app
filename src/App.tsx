@@ -1,4 +1,4 @@
-import {Grid, GridColumn, GridColumnGroup} from "./grid/Grid";
+import {defaultCellSpanFunction, Grid, GridColumn, GridColumnGroup} from "./grid/Grid";
 
 import React, {createContext, useEffect} from "react";
 import Vertical from "./layout/Vertical";
@@ -24,7 +24,7 @@ const DimensionSelectorContext = createContext<any>({});
 
 interface DimensionSelectorProps {
     $displayDimensionSelector: Observer<boolean>;
-    onDimensionChanged: (props:{columns:Array<any>,rows:Array<any>,filters:Array<any>,values:Array<any>}) => void
+    onDimensionChanged: (props: { columns: Array<any>, rows: Array<any>, filters: Array<any>, values: Array<any> }) => void
 }
 
 
@@ -38,57 +38,118 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
     const [$valuesGridData, setValuesGridData] = useObserver<any>([]);
     const [$focusedItem, setFocusedItem] = useObserver<any>(undefined);
     const [$toolBarAction, setToolBarAction] = useObserver<any>([]);
-    useObserverListener([$focusedItem,$fieldsGridData,$filtersGridData,$rowsGridData,$columnsGridData,$valuesGridData], () => {
+    useObserverListener([$focusedItem, $fieldsGridData, $filtersGridData, $rowsGridData, $columnsGridData, $valuesGridData], () => {
 
         const isInFields = $fieldsGridData.current.indexOf($focusedItem.current) >= 0;
         const isInFilters = $filtersGridData.current.indexOf($focusedItem.current) >= 0;
         const isInRows = $rowsGridData.current.indexOf($focusedItem.current) >= 0;
         const isInColumns = $columnsGridData.current.indexOf($focusedItem.current) >= 0;
         const isInValues = $valuesGridData.current.indexOf($focusedItem.current) >= 0;
-        function moveFrom(props:{fromGridSetter:(value:any) => void,toGridSetter:(value:any) => void}){
+
+        function moveFrom(props: { fromGridSetter: (value: any) => void, toGridSetter: (value: any) => void }) {
             return () => {
-                props.fromGridSetter((old:any) => old.filter((i:any) => i !== $focusedItem.current));
-                props.toGridSetter((old:any) => [...old, $focusedItem.current]);
-                if(dimensionSelectorProps.onDimensionChanged){
+                props.fromGridSetter((old: any) => old.filter((i: any) => i !== $focusedItem.current));
+                props.toGridSetter((old: any) => [...old, $focusedItem.current]);
+                if (dimensionSelectorProps.onDimensionChanged) {
                     dimensionSelectorProps.onDimensionChanged({
-                        columns:$columnsGridData.current,
-                        rows:$rowsGridData.current,
-                        filters:$filtersGridData.current,
-                        values:$valuesGridData.current
+                        columns: $columnsGridData.current,
+                        rows: $rowsGridData.current,
+                        filters: $filtersGridData.current,
+                        values: $valuesGridData.current
                     });
                 }
             }
         }
 
         const fieldsGridAction = [
-            {title: 'Add to Rows', onAction: moveFrom({fromGridSetter:setFieldsGridData,toGridSetter:setRowsGridData})},
-            {title: 'Add to Columns', onAction: moveFrom({fromGridSetter:setFieldsGridData,toGridSetter:setColumnsGridData})},
-            {title: 'Add to Filters', onAction: moveFrom({fromGridSetter:setFieldsGridData,toGridSetter:setFiltersGridData})},
-            {title: 'Add to Values', onAction: moveFrom({fromGridSetter:setFieldsGridData,toGridSetter:setValuesGridData})},
+            {
+                title: 'Add to Rows',
+                onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setRowsGridData})
+            },
+            {
+                title: 'Add to Columns',
+                onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setColumnsGridData})
+            },
+            {
+                title: 'Add to Filters',
+                onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setFiltersGridData})
+            },
+            {
+                title: 'Add to Values',
+                onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setValuesGridData})
+            },
         ];
         const filtersGridAction = [
-            {title: 'Move to Rows',onAction: moveFrom({fromGridSetter:setFiltersGridData,toGridSetter:setRowsGridData})},
-            {title: 'Move to Columns',onAction: moveFrom({fromGridSetter:setFiltersGridData,toGridSetter:setColumnsGridData})},
-            {title: 'Remove Filters',onAction: moveFrom({fromGridSetter:setFiltersGridData,toGridSetter:setFieldsGridData})},
-            {title: 'Move to Values',onAction: moveFrom({fromGridSetter:setFiltersGridData,toGridSetter:setValuesGridData})},
+            {
+                title: 'Move to Rows',
+                onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setRowsGridData})
+            },
+            {
+                title: 'Move to Columns',
+                onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setColumnsGridData})
+            },
+            {
+                title: 'Remove Filters',
+                onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setFieldsGridData})
+            },
+            {
+                title: 'Move to Values',
+                onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setValuesGridData})
+            },
         ];
         const columnGridAction = [
-            {title: 'Move to Rows',onAction: moveFrom({fromGridSetter:setColumnsGridData,toGridSetter:setRowsGridData})},
-            {title: 'Remove Column',onAction: moveFrom({fromGridSetter:setColumnsGridData,toGridSetter:setFieldsGridData})},
-            {title: 'Move to Filters',onAction: moveFrom({fromGridSetter:setColumnsGridData,toGridSetter:setFiltersGridData})},
-            {title: 'Move to Values',onAction: moveFrom({fromGridSetter:setColumnsGridData,toGridSetter:setValuesGridData})},
+            {
+                title: 'Move to Rows',
+                onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setRowsGridData})
+            },
+            {
+                title: 'Remove Column',
+                onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setFieldsGridData})
+            },
+            {
+                title: 'Move to Filters',
+                onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setFiltersGridData})
+            },
+            {
+                title: 'Move to Values',
+                onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setValuesGridData})
+            },
         ];
         const rowGridAction = [
-            {title: 'Remove Row',onAction: moveFrom({fromGridSetter:setRowsGridData,toGridSetter:setFieldsGridData})},
-            {title: 'Move to Columns',onAction: moveFrom({fromGridSetter:setRowsGridData,toGridSetter:setColumnsGridData})},
-            {title: 'Move to Filters',onAction: moveFrom({fromGridSetter:setRowsGridData,toGridSetter:setFiltersGridData})},
-            {title: 'Move to Values',onAction: moveFrom({fromGridSetter:setRowsGridData,toGridSetter:setValuesGridData})},
+            {
+                title: 'Remove Row',
+                onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setFieldsGridData})
+            },
+            {
+                title: 'Move to Columns',
+                onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setColumnsGridData})
+            },
+            {
+                title: 'Move to Filters',
+                onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setFiltersGridData})
+            },
+            {
+                title: 'Move to Values',
+                onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setValuesGridData})
+            },
         ];
         const valuesGridAction = [
-            {title: 'Move to Rows',onAction: moveFrom({fromGridSetter:setValuesGridData,toGridSetter:setRowsGridData})},
-            {title: 'Move to Columns',onAction: moveFrom({fromGridSetter:setValuesGridData,toGridSetter:setColumnsGridData})},
-            {title: 'Move to Filters',onAction: moveFrom({fromGridSetter:setValuesGridData,toGridSetter:setFiltersGridData})},
-            {title: 'Remove Value',onAction: moveFrom({fromGridSetter:setValuesGridData,toGridSetter:setFieldsGridData})},
+            {
+                title: 'Move to Rows',
+                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setRowsGridData})
+            },
+            {
+                title: 'Move to Columns',
+                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setColumnsGridData})
+            },
+            {
+                title: 'Move to Filters',
+                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setFiltersGridData})
+            },
+            {
+                title: 'Remove Value',
+                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setFieldsGridData})
+            },
         ];
 
         if (isInFields) {
@@ -117,17 +178,17 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
         style={{
             bottom: display ? 0 : '-80%',
             height: '80%',
-            border: '1px solid blue',
             position: 'absolute',
             width: '100%',
             transition: 'bottom 300ms ease-in-out',
             overflow: 'auto',
-            zIndex: 99,
-            backgroundColor:'#ddd',
-            padding:'0.5rem'
+            backgroundColor: '#ddd',
+            padding: '0.5rem',
+            zIndex:99
         }}>
+
         <Vertical style={{height: '33.33%'}}>
-            <ObserverValue observers={[$fieldsGridData,$focusedItem]} render={() => {
+            <ObserverValue observers={[$fieldsGridData, $focusedItem]} render={() => {
                 return <Grid defaultRowHeight={40} columns={[
                     {title: 'Choose fields to add to report', field: 'name', width: '100%'}
                 ]} data={$fieldsGridData.current} rowResizerHidden={true}
@@ -135,10 +196,11 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
                              focusedDataItem={$focusedItem.current}
                              filterHidden={true}
                              onFocusedDataItemChange={(newItem) => setFocusedItem(newItem)}
+
                 />
             }}/>
         </Vertical>
-        <Horizontal style={{height: '33.33%', overflow: 'auto',marginTop:'0.5rem'}}>
+        <Horizontal style={{height: '33.33%', overflow: 'auto', marginTop: '0.5rem'}}>
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$filtersGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
@@ -151,7 +213,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
                     />
                 }}/>
             </Vertical>
-            <Vertical style={{width: '50%',marginLeft:'0.5rem'}}>
+            <Vertical style={{width: '50%', marginLeft: '0.5rem'}}>
                 <ObserverValue observers={[$columnsGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
                         {title: 'Columns', field: 'name', width: '100%'}
@@ -164,7 +226,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
                 }}/>
             </Vertical>
         </Horizontal>
-        <Horizontal style={{height: '33.33%', overflow: 'auto',marginTop:'0.5rem'}}>
+        <Horizontal style={{height: '33.33%', overflow: 'auto', marginTop: '0.5rem'}}>
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$rowsGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
@@ -177,7 +239,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
                     />
                 }}/>
             </Vertical>
-            <Vertical style={{width: '50%',marginLeft:'0.5rem'}}>
+            <Vertical style={{width: '50%', marginLeft: '0.5rem'}}>
                 <ObserverValue observers={[$valuesGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
                         {title: 'Values', field: 'name', width: '100%'}
@@ -193,7 +255,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
         <ObserverValue observers={$toolBarAction} render={() => {
             const toolBarActions = $toolBarAction.current;
             const width = Math.round((100 / toolBarActions.length));
-            return <Horizontal style={{borderTop: '1px solid #CCC',marginTop:'0.5rem'}}>
+            return <Horizontal style={{borderTop: '1px solid #CCC', marginTop: '0.5rem'}}>
                 {toolBarActions.map((ta: any) => {
                     return <Vertical hAlign={'center'} style={{
                         width: `${width}%`,
@@ -221,8 +283,9 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
 export default function App() {
 
     const [$displayDimensionSelector, setDisplayDimensionSelector] = useObserver(false);
-    const [$gridColumns,setGridColumns] = useObserver<Array<GridColumn|GridColumnGroup>>([]);
-    const [$gridRows,setGridRows] = useObserver([]);
+    const [$pinnedLeftColumnIndex, setPinnedLeftColumnIndex] = useObserver(-1);
+    const [$gridColumns, setGridColumns] = useObserver<Array<GridColumn | GridColumnGroup>>([]);
+    const [$gridRows, setGridRows] = useObserver([]);
     useEffect(() => {
         //(async () => {
         // here we need to fetch dimension
@@ -231,19 +294,24 @@ export default function App() {
         // console.log('We have data', data);
         //})();
     }, []);
-    return <Vertical style={{height: '100%', overflow: 'auto'}}>
+    return <Vertical style={{height: '100%', overflow: 'hidden',position:'relative'}}>
 
-        <Vertical style={{flexGrow: 1, border: '1px solid red', overflow: 'auto'}}
+        <Vertical style={{flexGrow: 1, overflow: 'auto'}}
                   onClick={() => {
                       setDisplayDimensionSelector(false);
                   }}>
-            <ObserverValue observers={[$gridColumns,$gridRows]} render={() => {
-                return <Grid columns={$gridColumns.current} data={$gridRows.current} debugMode={false}/>;
+
+            <ObserverValue observers={[$gridColumns, $gridRows]} render={() => {
+                return <Grid columns={$gridColumns.current} data={$gridRows.current}
+                             debugMode={false}
+                             filterHidden={true}
+                             pinnedLeftColumnIndex={$pinnedLeftColumnIndex.current}
+                />;
             }}/>
 
         </Vertical>
-        <Horizontal style={{borderBottom: '1px solid #CCC'}}>
-            <Vertical style={{width: '50%', padding: '1rem', borderRight: '1px solid #CCC'}} hAlign={'center'}
+        <Horizontal style={{borderTop: '1px solid #ddd'}}>
+            <Vertical style={{width: '50%', padding: '1rem', borderRight: '1px solid #ddd'}} hAlign={'center'}
                       onClick={() => {
                           setDisplayDimensionSelector((old: boolean) => !old);
                       }}>
@@ -265,41 +333,62 @@ export default function App() {
                 return;
             }
 
-            const [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + columns.map(col => col.id).join('_')), fetchData('distinct/' + rows.map(row => row.id).join('_'))]);
-
-            const gridColumnsData:Array<GridColumn|GridColumnGroup> = columnsData.reduce((acc:Array<GridColumn|GridColumnGroup>,colData:any) => {
-                const colKey:string = Object.keys(colData)[0];
-                const colVal:string = colData[colKey];
-                const keys:Array<string> = colKey.split('_');
-                const values:Array<string> = colVal.split('#');
+            let [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + columns.map(col => col.id).join('_')), fetchData('distinct/' + rows.map(row => row.id).join('_'))]);
+            rowsData = rowsData.map((row: any) => {
+                const [key] = Object.keys(row);
+                const keys = key.split('_');
+                const val = row[key];
+                const values = val.split('#');
+                return keys.reduce((out: any, key: string, index: number) => {
+                    out[key] = values[index];
+                    return out;
+                }, {});
+            })
+            const cols = Object.keys(rowsData[0]).map(key => {
+                const column: GridColumn = {
+                    width: 200,
+                    field: key,
+                    title: key,
+                    cellSpanFunction: defaultCellSpanFunction,
+                    cellComponent:CellComponent
+                };
+                return column;
+            });
+            const colsLength = cols.length;
+            const gridColumnsData: Array<GridColumn | GridColumnGroup> = columnsData.reduce((acc: Array<GridColumn | GridColumnGroup>, colData: any) => {
+                const colKey: string = Object.keys(colData)[0];
+                const colVal: string = colData[colKey];
+                const keys: Array<string> = colKey.split('_');
+                const values: Array<string> = colVal.split('#');
                 const lastIndexKey = keys.length;
-                keys.reduce((acc:Array<GridColumn|GridColumnGroup>,key:string,index:number) => {
+                keys.reduce((acc: Array<GridColumn | GridColumnGroup>, key: string, index: number) => {
                     const isNotLastIndex = index < (lastIndexKey - 1);
                     const title = values[index];
-                    const existingChild:any = acc.find((ac:any) => ac.title === title);
-                    if(existingChild){
-                        const child:GridColumnGroup = existingChild;
+                    const existingChild: any = acc.find((ac: any) => ac.title === title);
+                    if (existingChild) {
+                        const child: GridColumnGroup = existingChild;
                         return child.columns;
                     }
-                    const child:any = {};
-                    if(isNotLastIndex){
-                        const group:GridColumnGroup = child;
+                    const child: any = {};
+                    if (isNotLastIndex) {
+                        const group: GridColumnGroup = child;
                         group.columns = [];
                         group.title = title;
 
-                    }else{
-                        const column:GridColumn = child;
-                        column.field = colVal +'⚮'+colKey;
+                    } else {
+                        const column: GridColumn = child;
+                        column.field = colVal + '⚮' + colKey;
                         column.title = title;
                         column.width = 200;
-                        column.cellComponent = CellComponent
+                        column.cellComponent = FetchDataCellComponent
                     }
                     acc.push(child);
                     return child.columns;
-                },acc);
+                }, acc);
                 return acc;
-            },[]);
+            }, cols);
 
+            setPinnedLeftColumnIndex(colsLength - 1);
             setGridColumns(gridColumnsData);
             setGridRows(rowsData);
             // const gridHeader: Array<GridColumn | GridColumnGroup> = [];
@@ -316,14 +405,20 @@ export default function App() {
     </Vertical>
 }
 
-async function fetchData(url:string){
+
+async function fetchData(url: string) {
     const result = await window.fetch(`http://localhost:3001/v1/${url}`);
     return await result.json();
 }
 
-function CellComponent(props:CellComponentStyledProps){
+function CellComponent(props: CellComponentStyledProps) {
+    return <Vertical vAlign={'center'} style={{height:'100%'}}>
+        {props.value}
+    </Vertical>
+}
 
-    return <Vertical style={props.cellStyle}>
+function FetchDataCellComponent(props:CellComponentStyledProps){
+    return <Vertical vAlign={'center'} style={{height:'100%'}}>
         {props.value}
     </Vertical>
 }
