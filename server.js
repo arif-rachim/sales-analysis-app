@@ -35,9 +35,20 @@ fastify.get('/v1/dimension',async () => {
 });
 
 fastify.get('/v1/distinct/:columnName',async (req) => {
+
     const columnName = req.params.columnName;
     const query = `select DISTINCT(${columnName.split('_').join('||"#"||')}) as ${columnName} from sales order by ${columnName} asc`;
     const [data] = await sequelize.query(query);
+    return data;
+});
+
+fastify.get('/v1/quantity',async (req) => {
+    const query = req.query;
+    const whereString = Object.keys(query).map(key => {
+        return `${key} = '${query[key]}'`
+    }).join(' and ');
+    const sqlQuery = `select sum(value) as value from sales where ${whereString} `;
+    const [data] = await sequelize.query(sqlQuery);
     return data;
 });
 

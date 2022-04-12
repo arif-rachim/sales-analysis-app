@@ -468,8 +468,32 @@ function CellComponent(props: CellComponentStyledProps) {
 }
 
 function FetchDataCellComponent(props:CellComponentStyledProps){
+    const [colValFiltersString,colKeyFiltersString] = props.column.field.split('⚮');
+    const dataItem = props.dataItem;
+    const [$value,setValue] = useObserver<any>('loading');
+    useEffect(() => {
+        const colKeyFilters = colKeyFiltersString.split('_');
+        const colValFilters = colValFiltersString.split('#');
+        const rowKeyFilters = Object.keys(dataItem);
+        const rowValFilters = rowKeyFilters.map(key => dataItem[key]);
+        const filters = [...colKeyFilters,...rowKeyFilters];
+        const values = [...colValFilters,...rowValFilters];
+        (async() => {
+            setValue('loading');
+            const [result] = await fetchData('quantity?'+toQuery(filters,values));
+            const value = result.value || 0;
+            setValue(value);
+        })();
+    },[colKeyFiltersString,colValFiltersString,dataItem,setValue])
 
     return <Vertical vAlign={'center'} style={{height:'100%'}}>
-        {props.value}
+        <ObserverValue observers={$value} render={() => {
+            return <Vertical style={{textAlign:'right'}}>{$value.current === 'loading'? 'Loading...':$value.current.toFixed(1)}</Vertical>
+        }}/>
     </Vertical>
+}
+function toQuery(filters:any,values:any){
+    return encodeURI(filters.map((filter:string,index:number) => {
+        return `${filter}=${values[index]}`;
+    }).join('&'))
 }
