@@ -1,9 +1,9 @@
 // Require the framework and instantiate it
 const {Sales,sequelize,SalesSchema} = require("./src/model");
-const fastify = require('fastify')({ logger: false });
+const fastify = require('fastify')({ logger: true });
 
 fastify.register(require('fastify-cors'), {
-    origin : true
+    origin :true
 })
 const pageSize = 50;
 

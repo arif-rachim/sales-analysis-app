@@ -440,6 +440,7 @@ export default function App() {
         });
         return {filters,columns,rows,values,dimensions:dim}
     });
+
     const {rows,columns} = initialDimension;
     useEffect(() => {
         renderGrid({columns, rows, setPinnedLeftColumnIndex, setGridColumns, setGridRows}).then();
@@ -488,8 +489,19 @@ export default function App() {
 
 
 async function fetchData(url: string, signal?: AbortSignal) {
-    const result = await window.fetch(`http://localhost:3001/v1/${url}`, {signal});
-    return await result.json();
+
+    const {hostname,protocol} = window.location;
+    const address = `${protocol}//${hostname}:3001/v1/${url}`;
+    console.log('fetching',address);
+    try{
+        const result = await window.fetch(address, {signal});
+        const json = await result.json();
+        return json;
+    }catch(error){
+        console.warn(error);
+        return []
+    }
+
 }
 
 function CellComponent(props: CellComponentStyledProps) {
@@ -515,11 +527,12 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
         (async () => {
             setValue('loading');
             try {
+
                 const [result] = await fetchData('quantity?' + toQuery(filters, values), controller.signal);
                 const value = result.value || 0;
                 setValue(value);
             } catch (err) {
-                //console.log(err);
+                console.log(err);
             }
         })();
         return () => {
