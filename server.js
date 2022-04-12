@@ -1,6 +1,6 @@
 // Require the framework and instantiate it
 const {Sales,sequelize,SalesSchema} = require("./src/model");
-const fastify = require('fastify')({ logger: true });
+const fastify = require('fastify')({ logger: false });
 
 fastify.register(require('fastify-cors'), {
     origin : true
@@ -38,7 +38,6 @@ fastify.get('/v1/distinct/:columnName',async (req) => {
 
     const columnName = req.params.columnName;
     const query = `select DISTINCT(${columnName.split('_').map(key => `"${key}"`).join("||'#'||")}) as column from sales order by "column" asc`;
-    console.log('We have query ',query,'columnName',columnName);
     const [data] = await sequelize.query(query,{logging:false});
     return data.map(d => ({[columnName]:d.column}));
 });

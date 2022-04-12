@@ -1,13 +1,13 @@
 import {defaultCellSpanFunction, Grid, GridColumn, GridColumnGroup} from "./grid/Grid";
 
-import React, {createContext, useEffect} from "react";
+import React, {createContext, useEffect,useState} from "react";
 import Vertical from "./layout/Vertical";
 import Horizontal from "./layout/Horizontal";
 import {Observer, useObserver} from "./observer/useObserver";
 import {ObserverValue, useObserverListener, useObserverValue} from "./observer";
 import {CellComponentStyledProps} from "./grid/Sheet";
 
-const SalesSchema:any = {
+const SalesSchema: any = {
     storeCode: {
         comment: 'Store Code'
     },
@@ -52,8 +52,8 @@ const SalesSchema:any = {
     }
 };
 
-const dimensions = Object.keys(SalesSchema).map((key:string) => {
-    return {id:key,name:SalesSchema[key].comment}
+const dimensions = Object.keys(SalesSchema).map((key: string) => {
+    return {id: key, name: SalesSchema[key].comment}
 })
 
 // const dimensions = [
@@ -74,18 +74,41 @@ const DimensionSelectorContext = createContext<any>({});
 
 interface DimensionSelectorProps {
     $displayDimensionSelector: Observer<boolean>;
-    onDimensionChanged: (props: { columns: Array<any>, rows: Array<any>, filters: Array<any>, values: Array<any> }) => void
+    onDimensionChanged: (props: { columns: Array<any>, rows: Array<any>, filters: Array<any>, values: Array<any> }) => void,
+    initialDimension:{filters:any;columns:any;rows:any;values:any;dimensions:any}
 }
 
+function loadDimension(dimensionName: string) {
+    const dimension = localStorage.getItem(dimensionName);
+    if (dimension) {
+        return JSON.parse(dimension);
+    }
+    return []
+}
 
 function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
-
+    const localStorage = window.localStorage;
     const display = useObserverValue(dimensionSelectorProps.$displayDimensionSelector);
-    const [$fieldsGridData, setFieldsGridData] = useObserver<any>(dimensions);
-    const [$filtersGridData, setFiltersGridData] = useObserver<any>([]);
-    const [$columnsGridData, setColumnsGridData] = useObserver<any>([]);
-    const [$rowsGridData, setRowsGridData] = useObserver<any>([]);
-    const [$valuesGridData, setValuesGridData] = useObserver<any>([]);
+
+    const [$fieldsGridData, setFieldsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.dimensions);
+    const [$filtersGridData, setFiltersGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.filters);
+    const [$columnsGridData, setColumnsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.columns);
+    const [$rowsGridData, setRowsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.rows);
+    const [$valuesGridData, setValuesGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.values);
+
+    useObserverListener([$filtersGridData], () => {
+        localStorage.setItem('filters', JSON.stringify($filtersGridData.current));
+    });
+    useObserverListener([$columnsGridData], () => {
+        localStorage.setItem('columns', JSON.stringify($columnsGridData.current));
+    });
+    useObserverListener([$rowsGridData], () => {
+        localStorage.setItem('rows', JSON.stringify($rowsGridData.current));
+    });
+    useObserverListener([$valuesGridData], () => {
+        localStorage.setItem('values', JSON.stringify($valuesGridData.current));
+    });
+
     const [$focusedItem, setFocusedItem] = useObserver<any>(undefined);
     const [$toolBarAction, setToolBarAction] = useObserver<any>([]);
     useObserverListener([$focusedItem, $fieldsGridData, $filtersGridData, $rowsGridData, $columnsGridData, $valuesGridData], () => {
@@ -234,7 +257,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             overflow: 'auto',
             backgroundColor: '#ddd',
             padding: '0.5rem',
-            zIndex:99
+            zIndex: 99
         }}>
 
         <Vertical style={{height: '33.33%'}}>
@@ -323,6 +346,77 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
 
 }
 
+async function renderGrid(props:{columns:any; rows:any; setPinnedLeftColumnIndex:any; setGridColumns:any; setGridRows:any}) {
+    const column = props.columns[0];
+    if (column === undefined) {
+        return;
+    }
+    const row = props.rows[0];
+    if (row === undefined) {
+        return;
+    }
+
+    let [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + props.columns.map((col:any) => col.id).join('_')), fetchData('distinct/' + props.rows.map((row:any) => row.id).join('_'))]);
+
+    rowsData = rowsData.map((row: any) => {
+        const [key] = Object.keys(row);
+        const keys = key.split('_');
+        const val = row[key];
+        const values = val.split('#');
+        return keys.reduce((out: any, key: string, index: number) => {
+            out[key] = values[index];
+            return out;
+        }, {});
+    })
+    const cols = Object.keys(rowsData[0]).map(key => {
+        const column: GridColumn = {
+            width: 100,
+            field: key,
+            title: key,
+            cellSpanFunction: defaultCellSpanFunction,
+            cellComponent: CellComponent
+        };
+        return column;
+    });
+    const colsLength = cols.length;
+    const gridColumnsData: Array<GridColumn | GridColumnGroup> = columnsData.reduce((acc: Array<GridColumn | GridColumnGroup>, colData: any) => {
+        const colKey: string = Object.keys(colData)[0];
+        const colVal: string = colData[colKey];
+        const keys: Array<string> = colKey.split('_');
+        const values: Array<string> = colVal.split('#');
+        const lastIndexKey = keys.length;
+        keys.reduce((acc: Array<GridColumn | GridColumnGroup>, key: string, index: number) => {
+            const isNotLastIndex = index < (lastIndexKey - 1);
+            const title = values[index];
+            const existingChild: any = acc.find((ac: any) => ac.title === title);
+            if (existingChild) {
+                const child: GridColumnGroup = existingChild;
+                return child.columns;
+            }
+            const child: any = {};
+            if (isNotLastIndex) {
+                const group: GridColumnGroup = child;
+                group.columns = [];
+                group.title = title;
+
+            } else {
+                const column: GridColumn = child;
+                column.field = colVal + '⚮' + colKey;
+                column.title = title;
+                column.width = 100;
+                column.cellComponent = FetchDataCellComponent
+            }
+            acc.push(child);
+            return child.columns;
+        }, acc);
+        return acc;
+    }, cols);
+
+    props.setPinnedLeftColumnIndex(colsLength - 1);
+    props.setGridColumns(gridColumnsData);
+    props.setGridRows(rowsData);
+}
+
 /**
  * Todo we need todo following things
  * 1. Add cors to fastify
@@ -336,15 +430,28 @@ export default function App() {
     const [$pinnedLeftColumnIndex, setPinnedLeftColumnIndex] = useObserver(-1);
     const [$gridColumns, setGridColumns] = useObserver<Array<GridColumn | GridColumnGroup>>([]);
     const [$gridRows, setGridRows] = useObserver([]);
+    const [initialDimension] = useState(() => {
+        const filters = loadDimension('filters');
+        const columns = loadDimension('columns');
+        const rows = loadDimension('rows');
+        const values = loadDimension('values');
+        const dim = dimensions.filter((d: any) => {
+            return !(filters.map((i: any) => i?.id).includes(d.id) || columns.map((i: any) => i?.id).includes(d.id) || rows.map((i: any) => i?.id).includes(d.id) || values.map((i: any) => i?.id).includes(d.id))
+        });
+        return {filters,columns,rows,values,dimensions:dim}
+    });
+    const {rows,columns} = initialDimension;
     useEffect(() => {
+        renderGrid({columns, rows, setPinnedLeftColumnIndex, setGridColumns, setGridRows}).then();
+
         //(async () => {
         // here we need to fetch dimension
         // const result = await fetch('http://localhost:3001/v1/dimension');
         // const data = await result.json();
         // console.log('We have data', data);
         //})();
-    }, []);
-    return <Vertical style={{height: '100%', overflow: 'hidden',position:'relative'}}>
+    }, [rows,columns]);
+    return <Vertical style={{height: '100%', overflow: 'hidden', position: 'relative'}}>
 
         <Vertical style={{flexGrow: 1, overflow: 'auto'}}
                   onClick={() => {
@@ -374,136 +481,62 @@ export default function App() {
         </Horizontal>
         <DimensionSelector $displayDimensionSelector={$displayDimensionSelector} onDimensionChanged={async (props) => {
             const {rows, columns} = props;
-
-            const column = (columns as any)[0];
-            if (column === undefined) {
-                return;
-            }
-            const row = (rows as any)[0];
-            if (row === undefined) {
-                return;
-            }
-
-            let [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + columns.map(col => col.id).join('_')), fetchData('distinct/' + rows.map(row => row.id).join('_'))]);
-
-            rowsData = rowsData.map((row: any) => {
-                const [key] = Object.keys(row);
-                const keys = key.split('_');
-                const val = row[key];
-                const values = val.split('#');
-                return keys.reduce((out: any, key: string, index: number) => {
-                    out[key] = values[index];
-                    return out;
-                }, {});
-            })
-            const cols = Object.keys(rowsData[0]).map(key => {
-                const column: GridColumn = {
-                    width: 200,
-                    field: key,
-                    title: key,
-                    cellSpanFunction: defaultCellSpanFunction,
-                    cellComponent:CellComponent
-                };
-                return column;
-            });
-            const colsLength = cols.length;
-            const gridColumnsData: Array<GridColumn | GridColumnGroup> = columnsData.reduce((acc: Array<GridColumn | GridColumnGroup>, colData: any) => {
-                const colKey: string = Object.keys(colData)[0];
-                const colVal: string = colData[colKey];
-                const keys: Array<string> = colKey.split('_');
-                const values: Array<string> = colVal.split('#');
-                const lastIndexKey = keys.length;
-                keys.reduce((acc: Array<GridColumn | GridColumnGroup>, key: string, index: number) => {
-                    const isNotLastIndex = index < (lastIndexKey - 1);
-                    const title = values[index];
-                    const existingChild: any = acc.find((ac: any) => ac.title === title);
-                    if (existingChild) {
-                        const child: GridColumnGroup = existingChild;
-                        return child.columns;
-                    }
-                    const child: any = {};
-                    if (isNotLastIndex) {
-                        const group: GridColumnGroup = child;
-                        group.columns = [];
-                        group.title = title;
-
-                    } else {
-                        const column: GridColumn = child;
-                        column.field = colVal + '⚮' + colKey;
-                        column.title = title;
-                        column.width = 200;
-                        column.cellComponent = FetchDataCellComponent
-                    }
-                    acc.push(child);
-                    return child.columns;
-                }, acc);
-                return acc;
-            }, cols);
-
-            setPinnedLeftColumnIndex(colsLength - 1);
-            setGridColumns(gridColumnsData);
-            setGridRows(rowsData);
-            // const gridHeader: Array<GridColumn | GridColumnGroup> = [];
-
-            // now we need to setup the column and the rows altogether
-            // first we need to build the column
-            // next we need to build the rows
-            // then we need to create the cell
-            // then we need to add filter into the cell
-            // then we need to add drilling capability
-            // rows get th
-            return true;
-        }}/>
+            await renderGrid({columns, rows, setPinnedLeftColumnIndex, setGridColumns, setGridRows});
+        }} initialDimension={initialDimension}/>
     </Vertical>
 }
 
 
-async function fetchData(url: string,signal?:AbortSignal) {
-    const result = await window.fetch(`http://localhost:3001/v1/${url}`,{signal});
+async function fetchData(url: string, signal?: AbortSignal) {
+    const result = await window.fetch(`http://localhost:3001/v1/${url}`, {signal});
     return await result.json();
 }
 
 function CellComponent(props: CellComponentStyledProps) {
-    return <Vertical vAlign={'center'} style={{height:'100%'}}>
+    return <Vertical vAlign={'center'} style={{height: '100%',padding:'2px 5px'}}>
         {props.value}
     </Vertical>
 }
 
-function FetchDataCellComponent(props:CellComponentStyledProps){
-    const [colValFiltersString,colKeyFiltersString] = props.column.field.split('⚮');
-    const dataItem = props.dataItem;
-    const [$value,setValue] = useObserver<any>('loading');
+function FetchDataCellComponent(props: CellComponentStyledProps) {
+    const [colValFiltersString, colKeyFiltersString] = props.column.field.split('⚮');
+    const dataItemString = JSON.stringify(props.dataItem);
+
+    const [$value, setValue] = useObserver<any>('loading');
     useEffect(() => {
+        const dataItem = JSON.parse(dataItemString);
         const colKeyFilters = colKeyFiltersString.split('_');
         const colValFilters = colValFiltersString.split('#');
         const rowKeyFilters = Object.keys(dataItem);
         const rowValFilters = rowKeyFilters.map(key => dataItem[key]);
-        const filters = [...colKeyFilters,...rowKeyFilters];
-        const values = [...colValFilters,...rowValFilters];
+        const filters = [...colKeyFilters, ...rowKeyFilters];
+        const values = [...colValFilters, ...rowValFilters];
         const controller = new AbortController();
-        (async() => {
+        (async () => {
             setValue('loading');
-            try{
-                const [result] = await fetchData('quantity?'+toQuery(filters,values),controller.signal);
+            try {
+                const [result] = await fetchData('quantity?' + toQuery(filters, values), controller.signal);
                 const value = result.value || 0;
                 setValue(value);
-            }catch(err){
+            } catch (err) {
                 //console.log(err);
             }
         })();
         return () => {
             controller.abort();
         }
-    },[colKeyFiltersString,colValFiltersString,dataItem,setValue])
+    }, [colKeyFiltersString, colValFiltersString, dataItemString, setValue])
 
-    return <Vertical vAlign={'center'} style={{height:'100%'}}>
+    return <Vertical vAlign={'center'} style={{height: '100%'}}>
         <ObserverValue observers={$value} render={() => {
-            return <Vertical style={{textAlign:'right'}}>{$value.current === 'loading'? 'Loading...':$value.current.toFixed(1)}</Vertical>
+            return <Vertical
+                style={{textAlign: 'right',padding:'2px 5px'}}>{$value.current === 'loading' ? 'Loading...' : $value.current.toFixed(1)}</Vertical>
         }}/>
     </Vertical>
 }
-function toQuery(filters:any,values:any){
-    return encodeURI(filters.map((filter:string,index:number) => {
+
+function toQuery(filters: any, values: any) {
+    return encodeURI(filters.map((filter: string, index: number) => {
         return `${filter}=${values[index]}`;
     }).join('&'))
 }

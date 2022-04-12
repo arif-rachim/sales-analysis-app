@@ -16,7 +16,8 @@ const sequelize = new Sequelize('postgres://postgres:arifrachim@localhost:5432/s
         min: 0,
         acquire: 30000,
         idle: 10000
-    }
+    },
+    logging:false
 })
 
 class Sales extends Model {
