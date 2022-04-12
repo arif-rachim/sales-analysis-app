@@ -1,6 +1,13 @@
 const {Sequelize, Model, DataTypes} = require('sequelize');
 const path = require('path');
-const sequelize = new Sequelize(`sqlite:${path.join('./output', 'sales.db')}`);
+const sequelize = new Sequelize(`sqlite:${path.join('./output', 'sales.db')}`,{
+    pool: {
+        max: 100,
+        min: 100,
+        acquire: 30000,
+        idle: 10000
+    }
+});
 
 class Sales extends Model {
 }
