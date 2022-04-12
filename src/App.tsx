@@ -355,6 +355,7 @@ export default function App() {
                 return <Grid columns={$gridColumns.current} data={$gridRows.current}
                              debugMode={false}
                              filterHidden={true}
+                             sortableHidden={true}
                              pinnedLeftColumnIndex={$pinnedLeftColumnIndex.current}
                 />;
             }}/>
@@ -384,6 +385,7 @@ export default function App() {
             }
 
             let [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + columns.map(col => col.id).join('_')), fetchData('distinct/' + rows.map(row => row.id).join('_'))]);
+
             rowsData = rowsData.map((row: any) => {
                 const [key] = Object.keys(row);
                 const keys = key.split('_');
@@ -456,8 +458,8 @@ export default function App() {
 }
 
 
-async function fetchData(url: string) {
-    const result = await window.fetch(`http://localhost:3001/v1/${url}`);
+async function fetchData(url: string,signal?:AbortSignal) {
+    const result = await window.fetch(`http://localhost:3001/v1/${url}`,{signal});
     return await result.json();
 }
 
@@ -478,12 +480,20 @@ function FetchDataCellComponent(props:CellComponentStyledProps){
         const rowValFilters = rowKeyFilters.map(key => dataItem[key]);
         const filters = [...colKeyFilters,...rowKeyFilters];
         const values = [...colValFilters,...rowValFilters];
+        const controller = new AbortController();
         (async() => {
             setValue('loading');
-            const [result] = await fetchData('quantity?'+toQuery(filters,values));
-            const value = result.value || 0;
-            setValue(value);
+            try{
+                const [result] = await fetchData('quantity?'+toQuery(filters,values),controller.signal);
+                const value = result.value || 0;
+                setValue(value);
+            }catch(err){
+                //console.log(err);
+            }
         })();
+        return () => {
+            controller.abort();
+        }
     },[colKeyFiltersString,colValFiltersString,dataItem,setValue])
 
     return <Vertical vAlign={'center'} style={{height:'100%'}}>

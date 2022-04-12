@@ -34,6 +34,7 @@ export interface GridProps {
     pinnedLeftColumnIndex?: number,
     rowResizerHidden?: boolean,
     filterHidden?: boolean,
+    sortableHidden?:boolean,
     defaultHeaderRowHeight? : number,
     debugMode?:boolean
 
@@ -258,9 +259,9 @@ export function CellComponentForColumnHeader(props: HeaderCellComponentProps) {
     const FilterCellComponent: React.FC<HeaderCellComponentProps> = gridColumn.filterCellComponent || CellComponentForColumnHeaderFilter;
     const gridContextRef = useContext(GridContext);
     const filterHidden = gridContextRef.current.props.filterHidden;
-
+    const sortableHidden = gridContextRef.current.props.sortableHidden;
     function handleSortClicked() {
-        if (!gridContextRef.current.setGridSort) {
+        if ((!gridContextRef.current.setGridSort) || sortableHidden === true) {
             return;
         }
         gridContextRef.current.setGridSort((oldVal: Array<GridSortItem>) => {

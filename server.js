@@ -1,6 +1,6 @@
 // Require the framework and instantiate it
 const {Sales,sequelize,SalesSchema} = require("./src/model");
-const fastify = require('fastify')({ logger: false });
+const fastify = require('fastify')({ logger: true });
 
 fastify.register(require('fastify-cors'), {
     origin : true
@@ -23,7 +23,7 @@ async function loadPaginatedQuery(query, page) {
 }
 
 fastify.get('/v1/sales/stores/:page',async (req) => {
-    const query = "SELECT DISTINCT(storeName),storeCode,city from sales where city not NULL order by storeCode ASC";
+    const query = "SELECT DISTINCT(sales.storeName),storeCode,city from sales where city not NULL order by storeCode ASC";
     const {page} = req.params;
     return await loadPaginatedQuery(query, page);
 });
@@ -37,15 +37,16 @@ fastify.get('/v1/dimension',async () => {
 fastify.get('/v1/distinct/:columnName',async (req) => {
 
     const columnName = req.params.columnName;
-    const query = `select DISTINCT(${columnName.split('_').join('||"#"||')}) as ${columnName} from sales order by ${columnName} asc`;
-    const [data] = await sequelize.query(query);
-    return data;
+    const query = `select DISTINCT(${columnName.split('_').map(key => `"${key}"`).join("||'#'||")}) as column from sales order by "column" asc`;
+    console.log('We have query ',query,'columnName',columnName);
+    const [data] = await sequelize.query(query,{logging:false});
+    return data.map(d => ({[columnName]:d.column}));
 });
 
 fastify.get('/v1/quantity',async (req) => {
     const query = req.query;
     const whereString = Object.keys(query).map(key => {
-        return `${key} = '${query[key]}'`
+        return `"${key}" = '${query[key]}'`
     }).join(' and ');
     const sqlQuery = `select sum(value) as value from sales where ${whereString} `;
     const [data] = await sequelize.query(sqlQuery);

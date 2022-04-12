@@ -89,8 +89,8 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                                 location: trimToUpperCase(stNames[1]),
                                 city: trimToUpperCase(storeCodeCity.get(parseInt(storeCode))),
                                 date: new Date(`${dt[1]}-${dt[0]}-01`),
-                                quantity: row[colIndex],
-                                value: row[storeCodes.findIndex((value, index) => value === storeCodes[colIndex] && index > colIndex)]
+                                quantity: parseInt(row[colIndex].toString() || '0'),
+                                value: parseFloat((row[storeCodes.findIndex((value, index) => value === storeCodes[colIndex] && index > colIndex)]).toString() || '0' )
                             }
                             sales.push(data);
                         }
