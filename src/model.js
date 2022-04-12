@@ -16,6 +16,8 @@ ImportedFile.init({
     },
     fileName: DataTypes.STRING
 }, {sequelize, modelName: 'imported_file'});
+
+
 const SalesSchema = {
     id: {
         type: DataTypes.INTEGER,

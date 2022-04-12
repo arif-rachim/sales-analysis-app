@@ -7,19 +7,69 @@ import {Observer, useObserver} from "./observer/useObserver";
 import {ObserverValue, useObserverListener, useObserverValue} from "./observer";
 import {CellComponentStyledProps} from "./grid/Sheet";
 
-const dimensions = [
-    {id: 'storeCode', name: 'Store Code'},
-    {id: 'storeName', name: 'Store Name'},
-    {id: 'store', name: 'Store Type'},
-    {id: 'location', name: 'Store Location'},
-    {id: 'city', name: 'Store City'},
-    {id: 'groupCode', name: 'Material Group Code'},
-    {id: 'name', name: 'Material Name'},
-    {id: 'category', name: 'Material Category'},
-    {id: 'date', name: 'Date'},
-    {id: 'quantity', name: 'Sales Quantity'},
-    {id: 'value', name: 'Sales Value'}
-];
+const SalesSchema:any = {
+    storeCode: {
+        comment: 'Store Code'
+    },
+    storeName: {
+        comment: 'Store Name'
+    },
+    store: {
+        comment: 'Store Type'
+    },
+    location: {
+        comment: 'Store Location'
+    },
+    city: {
+        comment: 'Store City'
+    },
+    groupCode: {
+        comment: 'Material Group Code'
+    },
+    groupName: {
+        comment: 'Material Group Name'
+    },
+    brand: {
+        comment: 'Material Brand'
+    },
+    code: {
+        comment: 'Material Code'
+    },
+    name: {
+        comment: 'Material Name'
+    },
+    category: {
+        comment: 'Material Category'
+    },
+    date: {
+        comment: 'Date',
+    },
+    quantity: {
+        comment: 'Quantity'
+    },
+    value: {
+        comment: 'Value'
+    }
+};
+
+const dimensions = Object.keys(SalesSchema).map((key:string) => {
+    return {id:key,name:SalesSchema[key].comment}
+})
+
+// const dimensions = [
+//     {id: 'storeCode', name: 'Store Code'},
+//     {id: 'storeName', name: 'Store Name'},
+//     {id: 'store', name: 'Store Type'},
+//     {id: 'location', name: 'Store Location'},
+//     {id: 'city', name: 'Store City'},
+//     {id: 'groupCode', name: 'Material Group Code'},
+//     {id: 'name', name: 'Material Name'},
+//     {id: 'category', name: 'Material Category'},
+//     {id: 'date', name: 'Date'},
+//     {id: 'quantity', name: 'Sales Quantity'},
+//     {id: 'value', name: 'Sales Value'}
+// ];
+
 const DimensionSelectorContext = createContext<any>({});
 
 interface DimensionSelectorProps {
@@ -418,6 +468,7 @@ function CellComponent(props: CellComponentStyledProps) {
 }
 
 function FetchDataCellComponent(props:CellComponentStyledProps){
+
     return <Vertical vAlign={'center'} style={{height:'100%'}}>
         {props.value}
     </Vertical>
