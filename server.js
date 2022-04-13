@@ -12,6 +12,35 @@ fastify.get('/', async (request, reply) => {
     return { hello: 'world' }
 })
 
+fastify.post('/v1/compoundRequest',async (req,res) => {
+    // const result = Promise.all(req.body.map(({id,method,body}) => {
+    //     return new Promise(resolve => {
+    //         const {filters,values} = body;
+    //         const whereString = filters.map((key,index) => {
+    //             return `"${key}" = '${values[index]}'`
+    //         }).join(' and ');
+    //         const sqlQuery = `select sum(${method}) as value from sales where ${whereString} `;
+    //         console.log(sqlQuery);
+    //         sequelize.query(sqlQuery).then(([[{value}]]) => {
+    //             resolve({value,id})
+    //         })
+    //     });
+    // }));
+    // return result;
+    const compoundQuery = req.body.map(({id,method,body},index) => {
+            const {filters,values} = body;
+            const whereString = filters.map((key,index) => {
+                return `"${key}" = '${values[index]}'`
+            }).join(' and ');
+            return `(select sum(${method}) as "${id}" from sales where ${whereString}) as "${index}"`;
+    });
+    const sqlQuery = `select * from ${compoundQuery.join(' , ')}`;
+    const [[data]] = await sequelize.query(sqlQuery);
+    return Object.keys(data).map((key) => {
+      return {value:data[key],id:key}
+    })
+})
+
 async function loadPaginatedQuery(query, page) {
     page = parseInt(page);
     const countQuery = `select count(*) total from (${query})`;

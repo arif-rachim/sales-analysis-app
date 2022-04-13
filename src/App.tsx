@@ -1,11 +1,12 @@
 import {defaultCellSpanFunction, Grid, GridColumn, GridColumnGroup} from "./grid/Grid";
 
-import React, {createContext, useEffect,useState} from "react";
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import Vertical from "./layout/Vertical";
 import Horizontal from "./layout/Horizontal";
 import {Observer, useObserver} from "./observer/useObserver";
 import {ObserverValue, useObserverListener, useObserverValue} from "./observer";
 import {CellComponentStyledProps} from "./grid/Sheet";
+import {generateUniqueID} from "web-vitals/dist/modules/lib/generateUniqueID";
 
 const SalesSchema: any = {
     storeCode: {
@@ -75,7 +76,7 @@ const DimensionSelectorContext = createContext<any>({});
 interface DimensionSelectorProps {
     $displayDimensionSelector: Observer<boolean>;
     onDimensionChanged: (props: { columns: Array<any>, rows: Array<any>, filters: Array<any>, values: Array<any> }) => void,
-    initialDimension:{filters:any;columns:any;rows:any;values:any;dimensions:any}
+    initialDimension: { filters: any; columns: any; rows: any; values: any; dimensions: any }
 }
 
 function loadDimension(dimensionName: string) {
@@ -346,7 +347,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
 
 }
 
-async function renderGrid(props:{columns:any; rows:any; setPinnedLeftColumnIndex:any; setGridColumns:any; setGridRows:any}) {
+async function renderGrid(props: { columns: any; rows: any; setPinnedLeftColumnIndex: any; setGridColumns: any; setGridRows: any }) {
     const column = props.columns[0];
     if (column === undefined) {
         return;
@@ -356,7 +357,7 @@ async function renderGrid(props:{columns:any; rows:any; setPinnedLeftColumnIndex
         return;
     }
 
-    let [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + props.columns.map((col:any) => col.id).join('_')), fetchData('distinct/' + props.rows.map((row:any) => row.id).join('_'))]);
+    let [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + props.columns.map((col: any) => col.id).join('_')), fetchData('distinct/' + props.rows.map((row: any) => row.id).join('_'))]);
 
     rowsData = rowsData.map((row: any) => {
         const [key] = Object.keys(row);
@@ -417,6 +418,7 @@ async function renderGrid(props:{columns:any; rows:any; setPinnedLeftColumnIndex
     props.setGridRows(rowsData);
 }
 
+const AppContext = createContext<any>({});
 /**
  * Todo we need todo following things
  * 1. Add cors to fastify
@@ -438,10 +440,10 @@ export default function App() {
         const dim = dimensions.filter((d: any) => {
             return !(filters.map((i: any) => i?.id).includes(d.id) || columns.map((i: any) => i?.id).includes(d.id) || rows.map((i: any) => i?.id).includes(d.id) || values.map((i: any) => i?.id).includes(d.id))
         });
-        return {filters,columns,rows,values,dimensions:dim}
+        return {filters, columns, rows, values, dimensions: dim}
     });
 
-    const {rows,columns} = initialDimension;
+    const {rows, columns} = initialDimension;
     useEffect(() => {
         renderGrid({columns, rows, setPinnedLeftColumnIndex, setGridColumns, setGridRows}).then();
 
@@ -451,66 +453,131 @@ export default function App() {
         // const data = await result.json();
         // console.log('We have data', data);
         //})();
-    }, [rows,columns]);
-    return <Vertical style={{height: '100%', overflow: 'hidden', position: 'relative'}}>
+    }, [rows, columns]);
+    const fetchData = useFetchPostData();
+    return <AppContext.Provider value={useMemo(() => ({fetchData}), [fetchData])}>
+        <Vertical style={{height: '100%', overflow: 'hidden', position: 'relative'}}>
 
-        <Vertical style={{flexGrow: 1, overflow: 'auto'}}
-                  onClick={() => {
-                      setDisplayDimensionSelector(false);
-                  }}>
-
-            <ObserverValue observers={[$gridColumns, $gridRows]} render={() => {
-                return <Grid columns={$gridColumns.current} data={$gridRows.current}
-                             debugMode={false}
-                             filterHidden={true}
-                             sortableHidden={true}
-                             pinnedLeftColumnIndex={$pinnedLeftColumnIndex.current}
-                />;
-            }}/>
-
-        </Vertical>
-        <Horizontal style={{borderTop: '1px solid #ddd'}}>
-            <Vertical style={{width: '50%', padding: '1rem', borderRight: '1px solid #ddd'}} hAlign={'center'}
+            <Vertical style={{flexGrow: 1, overflow: 'auto'}}
                       onClick={() => {
-                          setDisplayDimensionSelector((old: boolean) => !old);
+                          setDisplayDimensionSelector(false);
                       }}>
-                Configure Pivot
+
+                <ObserverValue observers={[$gridColumns, $gridRows]} render={() => {
+                    return <Grid columns={$gridColumns.current} data={$gridRows.current}
+                                 debugMode={false}
+                                 filterHidden={true}
+                                 sortableHidden={true}
+                                 pinnedLeftColumnIndex={$pinnedLeftColumnIndex.current}
+                    />;
+                }}/>
+
             </Vertical>
-            <Vertical style={{width: '50%', padding: '1rem'}} hAlign={'center'}>
-                Settings
-            </Vertical>
-        </Horizontal>
-        <DimensionSelector $displayDimensionSelector={$displayDimensionSelector} onDimensionChanged={async (props) => {
-            const {rows, columns} = props;
-            await renderGrid({columns, rows, setPinnedLeftColumnIndex, setGridColumns, setGridRows});
-        }} initialDimension={initialDimension}/>
-    </Vertical>
+            <Horizontal style={{borderTop: '1px solid #ddd'}}>
+                <Vertical style={{width: '50%', padding: '1rem', borderRight: '1px solid #ddd'}} hAlign={'center'}
+                          onClick={() => {
+                              setDisplayDimensionSelector((old: boolean) => !old);
+                          }}>
+                    Configure Pivot
+                </Vertical>
+                <Vertical style={{width: '50%', padding: '1rem'}} hAlign={'center'}>
+                    Settings
+                </Vertical>
+            </Horizontal>
+            <DimensionSelector $displayDimensionSelector={$displayDimensionSelector}
+                               onDimensionChanged={async (props) => {
+                                   const {rows, columns} = props;
+                                   await renderGrid({
+                                       columns,
+                                       rows,
+                                       setPinnedLeftColumnIndex,
+                                       setGridColumns,
+                                       setGridRows
+                                   });
+                               }} initialDimension={initialDimension}/>
+        </Vertical></AppContext.Provider>
+}
+
+function debounce(func: Function, timeout = 300) {
+    let timer: any = 0;
+    return (...args: any) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            // @ts-ignore
+            func.apply(this, args);
+        }, timeout);
+    };
+}
+
+function useFetchPostData() {
+    const requestRef = useRef<any>([]);
+    const fireImmediateRequestToServer = useCallback(function fireRequestToServer() {
+        const request = requestRef.current;
+        if(request.length === 0){
+            return;
+        }
+        const {hostname, protocol} = window.location;
+        const address = `${protocol}//${hostname}:3001/v1/compoundRequest`;
+        requestRef.current = [];
+        const options = {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json;charset=UTF-8",
+            },
+            body: JSON.stringify(request.map((r: any) => ({id: r.id, method: r.method, body: r.body}))),
+        };
+        (async () => {
+            try {
+                const result = await window.fetch(address, options)
+                const json = await result.json();
+                json.forEach(({value, id}: any) => {
+                    const req = request.find((req: any) => req.id === id);
+                    req.resolve(value);
+                });
+            } catch (error) {
+                console.warn(error);
+            }
+        })();
+    }, []);
+
+    const fireDebounceRequestToServer = useCallback(debounce(fireImmediateRequestToServer, 300), []);
+    return useCallback(function fetchPostData(url: string, body: any) {
+        return new Promise(resolve => {
+            const id = generateUniqueID();
+            requestRef.current.push({id, method: url, body, resolve});
+            if (requestRef.current.length > 100) {
+                fireImmediateRequestToServer();
+            } else {
+                fireDebounceRequestToServer();
+            }
+        });
+    }, [fireDebounceRequestToServer, fireImmediateRequestToServer]);
 }
 
 
 async function fetchData(url: string, signal?: AbortSignal) {
-
-    const {hostname,protocol} = window.location;
+    const {hostname, protocol} = window.location;
     const address = `${protocol}//${hostname}:3001/v1/${url}`;
-    console.log('fetching',address);
-    try{
+    console.log('fetching', address);
+    try {
         const result = await window.fetch(address, {signal});
         const json = await result.json();
         return json;
-    }catch(error){
+    } catch (error) {
         console.warn(error);
         return []
     }
-
 }
 
 function CellComponent(props: CellComponentStyledProps) {
-    return <Vertical vAlign={'center'} style={{height: '100%',padding:'2px 5px'}}>
+    return <Vertical vAlign={'center'} style={{height: '100%', padding: '2px 5px'}}>
         {props.value}
     </Vertical>
 }
 
 function FetchDataCellComponent(props: CellComponentStyledProps) {
+    const {fetchData} = useContext(AppContext);
     const [colValFiltersString, colKeyFiltersString] = props.column.field.split('⚮');
     const dataItemString = JSON.stringify(props.dataItem);
 
@@ -523,33 +590,26 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
         const rowValFilters = rowKeyFilters.map(key => dataItem[key]);
         const filters = [...colKeyFilters, ...rowKeyFilters];
         const values = [...colValFilters, ...rowValFilters];
-        const controller = new AbortController();
+
         (async () => {
             setValue('loading');
             try {
-
-                const [result] = await fetchData('quantity?' + toQuery(filters, values), controller.signal);
-                const value = result.value || 0;
+                const result = await fetchData('quantity', {filters, values});
+                const value = parseInt(result || '0');
                 setValue(value);
             } catch (err) {
                 console.log(err);
             }
         })();
-        return () => {
-            controller.abort();
-        }
     }, [colKeyFiltersString, colValFiltersString, dataItemString, setValue])
 
     return <Vertical vAlign={'center'} style={{height: '100%'}}>
         <ObserverValue observers={$value} render={() => {
             return <Vertical
-                style={{textAlign: 'right',padding:'2px 5px'}}>{$value.current === 'loading' ? 'Loading...' : $value.current.toFixed(1)}</Vertical>
+                style={{
+                    textAlign: 'right',
+                    padding: '2px 5px'
+                }}>{$value.current === 'loading' ? 'Loading...' : $value.current.toFixed(1)}</Vertical>
         }}/>
     </Vertical>
-}
-
-function toQuery(filters: any, values: any) {
-    return encodeURI(filters.map((filter: string, index: number) => {
-        return `${filter}=${values[index]}`;
-    }).join('&'))
 }

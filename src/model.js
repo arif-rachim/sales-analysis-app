@@ -115,6 +115,15 @@ const SalesSchema = {
         isQuantifiable : true
     }
 };
-Sales.init(SalesSchema, {sequelize, modelName: 'sales'});
+Sales.init(SalesSchema, {sequelize, modelName: 'sales',indexes:[
+        {
+            name: 'city_storeName_category',
+            fields: ['city','storeName', 'category']
+        },
+        {
+            name: 'storeName_location_city_brand',
+            fields: ['storeName','location', 'city','brand']
+        }
+    ]});
 
 module.exports = {Sales, ImportedFile, sequelize, SalesSchema};
