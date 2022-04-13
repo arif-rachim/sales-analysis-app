@@ -1,5 +1,7 @@
 import {
-    CellComponentProps, CellSpanFunctionProps,
+    CalculateLengthCallback,
+    CellComponentProps,
+    CellSpanFunctionProps,
     CellSpanFunctionResult,
     Column,
     dataItemToValueDefaultImplementation,
@@ -34,10 +36,10 @@ export interface GridProps {
     pinnedLeftColumnIndex?: number,
     rowResizerHidden?: boolean,
     filterHidden?: boolean,
-    sortableHidden?:boolean,
-    defaultHeaderRowHeight? : number,
-    debugMode?:boolean
-
+    sortableHidden?: boolean,
+    defaultHeaderRowHeight?: number,
+    debugMode?: boolean
+    headerRowHeightCallback?: CalculateLengthCallback
 }
 
 export interface GridColumn extends Column {
@@ -260,6 +262,7 @@ export function CellComponentForColumnHeader(props: HeaderCellComponentProps) {
     const gridContextRef = useContext(GridContext);
     const filterHidden = gridContextRef.current.props.filterHidden;
     const sortableHidden = gridContextRef.current.props.sortableHidden;
+
     function handleSortClicked() {
         if ((!gridContextRef.current.setGridSort) || sortableHidden === true) {
             return;
@@ -286,14 +289,14 @@ export function CellComponentForColumnHeader(props: HeaderCellComponentProps) {
     return <Vertical style={{height: '100%'}}>
         <Vertical style={{flexGrow: 1, padding: '0px 5px', backgroundColor: '#eee', color: '#333'}} hAlign={'center'}
                   vAlign={'center'}
-                    onClick={handleSortClicked}>
+                  onClick={handleSortClicked}>
 
-                <Horizontal>
-                    {props.title}
-                    {shouldHaveFilter &&
-                        <SortComponent field={gridColumn.field}/>
-                    }
-                </Horizontal>
+            <Horizontal>
+                {props.title}
+                {shouldHaveFilter &&
+                    <SortComponent field={gridColumn.field}/>
+                }
+            </Horizontal>
 
 
         </Vertical>
@@ -407,6 +410,7 @@ function populateHeaderDataMap(columnsProp: Array<GridColumnGroup | GridColumn>,
             headerDataMap.set(rowIdx, new Map<string, string>());
         }
         const row: Map<string, string> = (headerDataMap.get(rowIdx) || new Map<string, string>());
+
         if ('columns' in column) {
             populateHeaderDataMap(column.columns, headerDataMap, rowIdx + 1, (field: string) => {
                 if (setParentRowField) {
@@ -461,7 +465,8 @@ export function Grid(gridProps: GridProps) {
         pinnedLeftColumnIndex,
         rowResizerHidden,
         defaultHeaderRowHeight,
-        debugMode
+        debugMode,
+        headerRowHeightCallback
     } = gridProps;
 
     const defaultRowHeight = _defaultRowHeight || DEFAULT_HEIGHT;
@@ -493,7 +498,7 @@ export function Grid(gridProps: GridProps) {
     });
     const hideLeftColumnIndex = pinnedLeftColumnIndex !== undefined && pinnedLeftColumnIndex >= 0 ? pinnedLeftColumnIndex : -1;
     useEffect(() => setViewPortDimension(viewportRef.current.getBoundingClientRect()), [setViewPortDimension]);
-    useEffect(() => setFocusedDataItem(focusedDataItem), [focusedDataItem,setFocusedDataItem]);
+    useEffect(() => setFocusedDataItem(focusedDataItem), [focusedDataItem, setFocusedDataItem]);
     useObserverListener([$viewPortDimension, $columns], () => {
         if ($viewPortDimension.current.width > 0) {
             const columnsWidth = new Map<number, number>();
@@ -534,8 +539,8 @@ export function Grid(gridProps: GridProps) {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const headerData: Array<any> = useMemo(constructHeaderData(columnsProp), [columnsProp]);
-    useEffect(() => setData(dataProp), [dataProp,setData]);
-    useEffect(() => setColumns(convertColumnsPropsToColumns(columnsProp)), [columnsProp,setColumns]);
+    useEffect(() => setData(dataProp), [dataProp, setData]);
+    useEffect(() => setColumns(convertColumnsPropsToColumns(columnsProp)), [columnsProp, setColumns]);
     const columnDataToResizeRow: Array<GridColumn> = useMemo(() => ([{
         field: '_',
         width: FIRST_COLUMN_WIDTH,
@@ -550,8 +555,8 @@ export function Grid(gridProps: GridProps) {
             cellSpanFunction: defaultCellSpanFunction,
         }))
     });
-    if(debugMode){
-        console.log('Columns Header column updated',columnsHeaderColumn,'here we have header data',headerData);
+    if (debugMode) {
+        console.log('Columns Header column updated', columnsHeaderColumn, 'here we have header data', headerData);
     }
 
     const gridContextRef = useRef({
@@ -630,7 +635,7 @@ export function Grid(gridProps: GridProps) {
                                    defaultRowHeight={defaultHeaderRowHeight || HEADER_HEIGHT}
                                    defaultColWidth={defaultColWidth}
                                    hideLeftColumnIndex={-1}
-
+                                   rowHeightCallback={headerRowHeightCallback}
                             />
                         </Vertical>
                     }}/>
@@ -647,11 +652,16 @@ export function Grid(gridProps: GridProps) {
                                hideLeftColumnIndex={hideLeftColumnIndex}
                                debugMode={debugMode}
                                sheetHeightFollowsTotalRowsHeight={true}
+                               rowHeightCallback={headerRowHeightCallback}
                         />
                     </Vertical>
                 </Horizontal>
             </Horizontal>
-            <Horizontal style={{height: `calc(100% - ${defaultHeaderRowHeight || HEADER_HEIGHT}px)`, width: '100%', overflow: 'auto'}}>
+            <Horizontal style={{
+                height: `calc(100% - ${defaultHeaderRowHeight || HEADER_HEIGHT}px)`,
+                width: '100%',
+                overflow: 'auto'
+            }}>
                 {rowResizerHidden !== true &&
                     <Vertical style={{flexBasis: FIRST_COLUMN_WIDTH, flexShrink: 0, flexGrow: 0}}>
                         <Sheet data={sheetDataToResizeRow}
@@ -731,7 +741,7 @@ export function Grid(gridProps: GridProps) {
     </Vertical>
 }
 
-export function defaultCellSpanFunction(props:CellSpanFunctionProps):CellSpanFunctionResult{
+export function defaultCellSpanFunction(props: CellSpanFunctionProps): CellSpanFunctionResult {
     let rowSpan = 1;
     let colSpan = 1;
 

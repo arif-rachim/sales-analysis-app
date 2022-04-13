@@ -8,7 +8,17 @@ import {ObserverValue, useObserverListener, useObserverValue} from "./observer";
 import {CellComponentStyledProps} from "./grid/Sheet";
 import {generateUniqueID} from "web-vitals/dist/modules/lib/generateUniqueID";
 
+const FIELD_SEPARATOR: string = '⚮';
+
 const SalesSchema: any = {
+    quantity: {
+        comment: 'QTY',
+        isNumber: true
+    },
+    value: {
+        comment: 'AED',
+        isNumber: true
+    },
     storeCode: {
         comment: 'Store Code'
     },
@@ -45,16 +55,10 @@ const SalesSchema: any = {
     date: {
         comment: 'Date',
     },
-    quantity: {
-        comment: 'Quantity'
-    },
-    value: {
-        comment: 'Value'
-    }
 };
 
 const dimensions = Object.keys(SalesSchema).map((key: string) => {
-    return {id: key, name: SalesSchema[key].comment}
+    return {id: key, name: SalesSchema[key].comment, isNumber: SalesSchema[key].isNumber}
 })
 
 // const dimensions = [
@@ -119,6 +123,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
         const isInRows = $rowsGridData.current.indexOf($focusedItem.current) >= 0;
         const isInColumns = $columnsGridData.current.indexOf($focusedItem.current) >= 0;
         const isInValues = $valuesGridData.current.indexOf($focusedItem.current) >= 0;
+        const isNumber = $focusedItem.current.isNumber;
 
         function moveFrom(props: { fromGridSetter: (value: any) => void, toGridSetter: (value: any) => void }) {
             return () => {
@@ -147,12 +152,23 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Add to Filters',
                 onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setFiltersGridData})
-            },
+            }
+        ];
+
+        const fieldsGridActionForNumberItem = [
             {
                 title: 'Add to Values',
                 onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setValuesGridData})
-            },
+            }
         ];
+
+        const valuesGridActionForNumberItem = [
+            {
+                title: 'Remove from Values',
+                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setFieldsGridData})
+            }
+        ];
+
         const filtersGridAction = [
             {
                 title: 'Move to Rows',
@@ -165,11 +181,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Remove Filters',
                 onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setFieldsGridData})
-            },
-            {
-                title: 'Move to Values',
-                onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setValuesGridData})
-            },
+            }
         ];
         const columnGridAction = [
             {
@@ -183,11 +195,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Move to Filters',
                 onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setFiltersGridData})
-            },
-            {
-                title: 'Move to Values',
-                onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setValuesGridData})
-            },
+            }
         ];
         const rowGridAction = [
             {
@@ -201,30 +209,19 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Move to Filters',
                 onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setFiltersGridData})
-            },
-            {
-                title: 'Move to Values',
-                onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setValuesGridData})
-            },
+            }
         ];
-        const valuesGridAction = [
-            {
-                title: 'Move to Rows',
-                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setRowsGridData})
-            },
-            {
-                title: 'Move to Columns',
-                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setColumnsGridData})
-            },
-            {
-                title: 'Move to Filters',
-                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setFiltersGridData})
-            },
-            {
-                title: 'Remove Value',
-                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setFieldsGridData})
-            },
-        ];
+
+
+        if (isNumber) {
+            if (isInFields) {
+                setToolBarAction(fieldsGridActionForNumberItem);
+            }
+            if (isInValues) {
+                setToolBarAction(valuesGridActionForNumberItem);
+            }
+            return;
+        }
 
         if (isInFields) {
             setToolBarAction(fieldsGridAction);
@@ -238,9 +235,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
         if (isInRows) {
             setToolBarAction(rowGridAction);
         }
-        if (isInValues) {
-            setToolBarAction(valuesGridAction);
-        }
+
     });
 
 
@@ -267,6 +262,7 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
                     {title: 'Choose fields to add to report', field: 'name', width: '100%'}
                 ]} data={$fieldsGridData.current} rowResizerHidden={true}
                              defaultHeaderRowHeight={30}
+
                              focusedDataItem={$focusedItem.current}
                              filterHidden={true}
                              onFocusedDataItemChange={(newItem) => setFocusedItem(newItem)}
@@ -347,13 +343,19 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
 
 }
 
-async function renderGrid(props: { columns: any; rows: any; setPinnedLeftColumnIndex: any; setGridColumns: any; setGridRows: any }) {
+async function renderGrid(props: { columns: any; rows: any; values: any; setPinnedLeftColumnIndex: any; setGridColumns: any; setGridRows: any }) {
     const column = props.columns[0];
     if (column === undefined) {
         return;
     }
     const row = props.rows[0];
     if (row === undefined) {
+        return;
+    }
+
+    const value = props.values[0];
+
+    if (value === undefined) {
         return;
     }
 
@@ -401,11 +403,22 @@ async function renderGrid(props: { columns: any; rows: any; setPinnedLeftColumnI
                 group.title = title;
 
             } else {
-                const column: GridColumn = child;
-                column.field = colVal + '⚮' + colKey;
-                column.title = title;
-                column.width = 100;
-                column.cellComponent = FetchDataCellComponent
+                const group: GridColumnGroup = child;
+                group.title = title;
+                group.columns = props.values.map((value: any) => {
+                    const column: GridColumn = {
+                        title : value.name,
+                        field : colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id,
+                        width : 100,
+                        cellComponent : FetchDataCellComponent
+                    };
+                    // column.field = colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id;
+                    // column.title = value.name;
+                    // column.width = 50;
+                    // column.cellComponent = FetchDataCellComponent
+                    return column;
+                });
+
             }
             acc.push(child);
             return child.columns;
@@ -443,9 +456,9 @@ export default function App() {
         return {filters, columns, rows, values, dimensions: dim}
     });
 
-    const {rows, columns} = initialDimension;
+    const {rows, columns, values} = initialDimension;
     useEffect(() => {
-        renderGrid({columns, rows, setPinnedLeftColumnIndex, setGridColumns, setGridRows}).then();
+        renderGrid({columns, rows, values, setPinnedLeftColumnIndex, setGridColumns, setGridRows}).then();
 
         //(async () => {
         // here we need to fetch dimension
@@ -469,6 +482,9 @@ export default function App() {
                                  filterHidden={true}
                                  sortableHidden={true}
                                  pinnedLeftColumnIndex={$pinnedLeftColumnIndex.current}
+                                 headerRowHeightCallback={props => {
+                                     return (props.index === props.data.length - 1) ? 20 : props.length;
+                                 }}
                     />;
                 }}/>
 
@@ -486,10 +502,11 @@ export default function App() {
             </Horizontal>
             <DimensionSelector $displayDimensionSelector={$displayDimensionSelector}
                                onDimensionChanged={async (props) => {
-                                   const {rows, columns} = props;
+                                   const {rows, columns, values} = props;
                                    await renderGrid({
                                        columns,
                                        rows,
+                                       values,
                                        setPinnedLeftColumnIndex,
                                        setGridColumns,
                                        setGridRows
@@ -513,7 +530,7 @@ function useFetchPostData() {
     const requestRef = useRef<any>([]);
     const fireImmediateRequestToServer = useCallback(function fireRequestToServer() {
         const request = requestRef.current;
-        if(request.length === 0){
+        if (request.length === 0) {
             return;
         }
         const {hostname, protocol} = window.location;
@@ -575,10 +592,10 @@ function CellComponent(props: CellComponentStyledProps) {
         {props.value}
     </Vertical>
 }
-
+const numberFormat = new Intl.NumberFormat();
 function FetchDataCellComponent(props: CellComponentStyledProps) {
     const {fetchData} = useContext(AppContext);
-    const [colValFiltersString, colKeyFiltersString] = props.column.field.split('⚮');
+    const [colValFiltersString, colKeyFiltersString, valueType] = props.column.field.split(FIELD_SEPARATOR);
     const dataItemString = JSON.stringify(props.dataItem);
 
     const [$value, setValue] = useObserver<any>('loading');
@@ -594,7 +611,7 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
         (async () => {
             setValue('loading');
             try {
-                const result = await fetchData('quantity', {filters, values});
+                const result = await fetchData(valueType, {filters, values});
                 const value = parseInt(result || '0');
                 setValue(value);
             } catch (err) {
@@ -609,7 +626,7 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
                 style={{
                     textAlign: 'right',
                     padding: '2px 5px'
-                }}>{$value.current === 'loading' ? 'Loading...' : $value.current.toFixed(1)}</Vertical>
+                }}>{$value.current === 'loading' ? 'Loading...' : numberFormat.format($value.current)}</Vertical>
         }}/>
     </Vertical>
 }

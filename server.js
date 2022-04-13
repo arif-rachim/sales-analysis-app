@@ -85,7 +85,12 @@ fastify.get('/v1/quantity',async (req) => {
 const start = async () => {
     try {
         await Sales.sync();
-        await fastify.listen(3001);
+        fastify.listen(3001,'0.0.0.0')
+            .then((address) => console.log(`server listening on ${address}`))
+            .catch(err => {
+                console.log('Error starting server:', err)
+                process.exit(1)
+            })
     } catch (err) {
         fastify.log.error(err)
         process.exit(1)
