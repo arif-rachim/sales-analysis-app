@@ -140,6 +140,36 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             }
         }
 
+        function moveUpOrDown(setState:any,isUp:boolean){
+            return () => {
+                setState((old: Array<any>) => {
+                    const currentIndex = old.indexOf($focusedItem.current);
+                    if (isUp && currentIndex > 0) {
+                        const itemBefore = old[currentIndex - 1];
+                        old[currentIndex - 1] = $focusedItem.current;
+                        old[currentIndex] = itemBefore;
+                        return [...old];
+                    }
+                    if (!isUp && (currentIndex < old.length)) {
+                        const itemAfter = old[currentIndex + 1];
+                        old[currentIndex + 1] = $focusedItem.current;
+                        old[currentIndex] = itemAfter;
+                        return [...old];
+                    }
+                    return old;
+                });
+                if (dimensionSelectorProps.onDimensionChanged) {
+                    dimensionSelectorProps.onDimensionChanged({
+                        columns: $columnsGridData.current,
+                        rows: $rowsGridData.current,
+                        filters: $filtersGridData.current,
+                        values: $valuesGridData.current
+                    });
+                }
+            }
+        }
+
+
         const fieldsGridAction = [
             {
                 title: 'Add to Rows',
@@ -152,6 +182,14 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Add to Filters',
                 onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setFiltersGridData})
+            },
+            {
+                title: 'Move Up',
+                onAction: moveUpOrDown(setFieldsGridData,true)
+            },
+            {
+                title: 'Move Down',
+                onAction: moveUpOrDown(setFieldsGridData,false)
             }
         ];
 
@@ -159,6 +197,14 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Add to Values',
                 onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setValuesGridData})
+            },
+            {
+                title: 'Move Up',
+                onAction: moveUpOrDown(setFieldsGridData,true)
+            },
+            {
+                title: 'Move Down',
+                onAction: moveUpOrDown(setFieldsGridData,false)
             }
         ];
 
@@ -166,6 +212,14 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Remove from Values',
                 onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setFieldsGridData})
+            },
+            {
+                title: 'Move Up',
+                onAction: moveUpOrDown(setValuesGridData,true)
+            },
+            {
+                title: 'Move Down',
+                onAction: moveUpOrDown(setValuesGridData,false)
             }
         ];
 
@@ -181,6 +235,14 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Remove Filters',
                 onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setFieldsGridData})
+            },
+            {
+                title: 'Move Up',
+                onAction: moveUpOrDown(setFiltersGridData,true)
+            },
+            {
+                title: 'Move Down',
+                onAction: moveUpOrDown(setFiltersGridData,false)
             }
         ];
         const columnGridAction = [
@@ -195,6 +257,14 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Move to Filters',
                 onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setFiltersGridData})
+            },
+            {
+                title: 'Move Up',
+                onAction: moveUpOrDown(setColumnsGridData,true)
+            },
+            {
+                title: 'Move Down',
+                onAction: moveUpOrDown(setColumnsGridData,false)
             }
         ];
         const rowGridAction = [
@@ -209,6 +279,14 @@ function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
             {
                 title: 'Move to Filters',
                 onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setFiltersGridData})
+            },
+            {
+                title: 'Move Up',
+                onAction: moveUpOrDown(setRowsGridData,true)
+            },
+            {
+                title: 'Move Down',
+                onAction: moveUpOrDown(setRowsGridData,false)
             }
         ];
 
@@ -407,10 +485,10 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
                 group.title = title;
                 group.columns = props.values.map((value: any) => {
                     const column: GridColumn = {
-                        title : value.name,
-                        field : colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id,
-                        width : 100,
-                        cellComponent : FetchDataCellComponent
+                        title: value.name,
+                        field: colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id,
+                        width: 100,
+                        cellComponent: FetchDataCellComponent
                     };
                     // column.field = colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id;
                     // column.title = value.name;
@@ -466,7 +544,7 @@ export default function App() {
         // const data = await result.json();
         // console.log('We have data', data);
         //})();
-    }, [rows, columns]);
+    }, [rows, columns, values, setPinnedLeftColumnIndex, setGridColumns, setGridRows]);
     const fetchData = useFetchPostData();
     return <AppContext.Provider value={useMemo(() => ({fetchData}), [fetchData])}>
         <Vertical style={{height: '100%', overflow: 'hidden', position: 'relative'}}>
@@ -557,7 +635,7 @@ function useFetchPostData() {
             }
         })();
     }, []);
-
+    // eslint-disable-next-line
     const fireDebounceRequestToServer = useCallback(debounce(fireImmediateRequestToServer, 300), []);
     return useCallback(function fetchPostData(url: string, body: any) {
         return new Promise(resolve => {
@@ -576,11 +654,9 @@ function useFetchPostData() {
 async function fetchData(url: string, signal?: AbortSignal) {
     const {hostname, protocol} = window.location;
     const address = `${protocol}//${hostname}:3001/v1/${url}`;
-    console.log('fetching', address);
     try {
         const result = await window.fetch(address, {signal});
-        const json = await result.json();
-        return json;
+        return await result.json();
     } catch (error) {
         console.warn(error);
         return []
@@ -592,7 +668,9 @@ function CellComponent(props: CellComponentStyledProps) {
         {props.value}
     </Vertical>
 }
+
 const numberFormat = new Intl.NumberFormat();
+
 function FetchDataCellComponent(props: CellComponentStyledProps) {
     const {fetchData} = useContext(AppContext);
     const [colValFiltersString, colKeyFiltersString, valueType] = props.column.field.split(FIELD_SEPARATOR);
@@ -618,7 +696,7 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
                 console.log(err);
             }
         })();
-    }, [colKeyFiltersString, colValFiltersString, dataItemString, setValue])
+    }, [colKeyFiltersString, colValFiltersString, dataItemString, fetchData, setValue, valueType])
 
     return <Vertical vAlign={'center'} style={{height: '100%'}}>
         <ObserverValue observers={$value} render={() => {
