@@ -243,7 +243,7 @@ function SortComponent({field}: { field: string }) {
     </Vertical>;
 }
 
-interface HeaderCellComponentProps {
+export interface HeaderCellComponentProps {
     field: string,
     title: string,
     column: Column,
@@ -287,18 +287,15 @@ export function CellComponentForColumnHeader(props: HeaderCellComponentProps) {
 
     const shouldHaveFilter = (props.rowIndex + (props?.rowSpan || 0)) === props.dataSource.length;
     return <Vertical style={{height: '100%'}}>
-        <Vertical style={{flexGrow: 1, padding: '0px 5px', backgroundColor: '#eee', color: '#333'}} hAlign={'center'}
+        <Vertical style={{flexGrow: 1, padding: '0px 5px', backgroundColor: '#ddd', color: '#333',fontWeight:'bold'}} hAlign={props.column.hAlign}
                   vAlign={'center'}
                   onClick={handleSortClicked}>
-
             <Horizontal>
                 {props.title}
                 {shouldHaveFilter &&
                     <SortComponent field={gridColumn.field}/>
                 }
             </Horizontal>
-
-
         </Vertical>
         {shouldHaveFilter && filterHidden !== true &&
             <FilterCellComponent title={props.title} field={props.field} colIndex={props.colIndex} column={gridColumn}
@@ -545,6 +542,7 @@ export function Grid(gridProps: GridProps) {
         field: '_',
         width: FIRST_COLUMN_WIDTH,
         title: ' ',
+        hAlign: 'left',
         cellComponent: CellComponentToResizeRow
     }]), []);
 

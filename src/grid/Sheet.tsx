@@ -58,6 +58,7 @@ export interface CellSpanFunctionResult {
 export interface Column {
     field: string,
     width: number | string,
+    hAlign: 'left' | 'right' | 'center',
     cellComponent?: React.FC<CellComponentStyledProps>,
     cellStyleFunction?: (props: CellStyleFunctionProperties) => CSSProperties,
     dataItemToValue?: (props: DataItemToValueProps) => string,
@@ -153,9 +154,10 @@ function cellStyleFunctionDefaultImplementation(props: CellStyleFunctionProperti
     const isFocused = props.isFocused;
     return {
         padding: '0 5px',
-        backgroundColor: isFocused ? '#99D9EA' : (props.rowIndex % 2) ? '#eee' : '#fff',
+        backgroundColor: isFocused ? '#99D9EA' : (props.rowIndex % 2) ? '#f6f6f6' : '#ffffff',
         height: '100%',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        textAlign : props.column.hAlign
     }
 }
 
@@ -228,7 +230,13 @@ export const Sheet = React.forwardRef(function Sheet<DataItem>(props: SheetPrope
             const result = props.data.reduce((total, data, index) => {
                 let length = (customRowHeight.has(index) ? customRowHeight.get(index) || defaultRowHeight : defaultRowHeight);
                 const rowHeightCallback = propsRef.current.rowHeightCallback || defaultLengthCallback;
-                length = rowHeightCallback({data:props.data,index,length,customLength:customRowHeight,defaultLength:defaultRowHeight});
+                length = rowHeightCallback({
+                    data: props.data,
+                    index,
+                    length,
+                    customLength: customRowHeight,
+                    defaultLength: defaultRowHeight
+                });
                 return total + length;
             }, 0);
             return result;
@@ -336,9 +344,9 @@ function calculateLength(customLength: Map<number, number> = new Map<number, num
         const length = (customLength.has(key) ? customLength.get(key) || 0 : 0);
         return acc + calcLengthCallback({length, defaultLength, index: key, data, customLength})
     }, 0);
-    const totalDefaultLength = Array.from({length:(data.length - customLengthKeys.length)}).reduce((acc:number,_:any,index:number) => {
-        return acc + calcLengthCallback({length:defaultLength,defaultLength,customLength,index,data});
-    },0);
+    const totalDefaultLength = Array.from({length: (data.length - customLengthKeys.length)}).reduce((acc: number, _: any, index: number) => {
+        return acc + calcLengthCallback({length: defaultLength, defaultLength, customLength, index, data});
+    }, 0);
     return totalDefaultLength + totalCustomLength;
 }
 

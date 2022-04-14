@@ -1,45 +1,66 @@
-import React, {createContext} from "react";
+import React, {createContext, useContext} from "react";
 import {ObserverValue, useObserver, useObserverListener, useObserverValue} from "../observer";
 import Vertical from "../layout/Vertical";
 import {Grid} from "../grid/Grid";
 import Horizontal from "../layout/Horizontal";
 import {Observer} from "../observer/useObserver";
+import {CellComponentStyledProps} from "../grid/Sheet";
+import {IoFilterOutline} from "react-icons/io5";
+import {FilterSelector} from "./FilterSelector";
 
 const DimensionSelectorContext = createContext<any>({});
 
 interface DimensionSelectorProps {
     $displayDimensionSelector: Observer<boolean>;
     onDimensionChanged: (props: { columns: Array<any>, rows: Array<any>, filters: Array<any>, values: Array<any> }) => void,
-    initialDimension: { filters: any; columns: any; rows: any; values: any; dimensions: any }
+    initialDimension: { filters: any; columns: any; rows: any; values: any; dimensions: any };
 }
 
-export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
-    const localStorage = window.localStorage;
-    const display = useObserverValue(dimensionSelectorProps.$displayDimensionSelector);
+function ItemCellComponent(props: CellComponentStyledProps) {
+    const dimensionContext = useContext(DimensionSelectorContext);
+    return <Horizontal style={{...props.cellStyle, paddingRight: 0}} vAlign={'center'}>
+        <Vertical style={{flexGrow: 1}}>
+            {props.value}
+        </Vertical>
+        <Vertical style={{fontSize: 26, padding: '0px 10px', borderLeft: '1px solid #ddd'}}
+                  onClick={() => dimensionContext.onFilterClicked(props.dataItem)}>
+            <IoFilterOutline/>
+        </Vertical>
+    </Horizontal>
+}
 
-    const [$fieldsGridData, setFieldsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.dimensions);
-    const [$filtersGridData, setFiltersGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.filters);
-    const [$columnsGridData, setColumnsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.columns);
-    const [$rowsGridData, setRowsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.rows);
-    const [$valuesGridData, setValuesGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.values);
-
-    useObserverListener([$filtersGridData], () => {
-        localStorage.setItem('filters', JSON.stringify($filtersGridData.current));
-    });
-    useObserverListener([$columnsGridData], () => {
-        localStorage.setItem('columns', JSON.stringify($columnsGridData.current));
-    });
-    useObserverListener([$rowsGridData], () => {
-        localStorage.setItem('rows', JSON.stringify($rowsGridData.current));
-    });
-    useObserverListener([$valuesGridData], () => {
-        localStorage.setItem('values', JSON.stringify($valuesGridData.current));
-    });
-
-    const [$focusedItem, setFocusedItem] = useObserver<any>(undefined);
-    const [$toolBarAction, setToolBarAction] = useObserver<any>([]);
-    useObserverListener([$focusedItem, $fieldsGridData, $filtersGridData, $rowsGridData, $columnsGridData, $valuesGridData], () => {
-
+function setupAction(props: {
+                         $fieldsGridData: Observer<any>,
+                         $focusedItem: Observer<any>,
+                         $filtersGridData: Observer<any>,
+                         $rowsGridData: Observer<any>,
+                         $columnsGridData: Observer<any>,
+                         $valuesGridData: Observer<any>,
+                         dimensionSelectorProps: DimensionSelectorProps,
+                         setFieldsGridData: (value: any) => void,
+                         setRowsGridData: (value: any) => void,
+                         setColumnsGridData: (value: any) => void,
+                         setFiltersGridData: (value: any) => void,
+                         setValuesGridData: (value: any) => void,
+                         setToolBarAction: (value: any) => void
+                     }
+) {
+    return () => {
+        const {
+            dimensionSelectorProps,
+            $columnsGridData,
+            $rowsGridData,
+            $valuesGridData,
+            $filtersGridData,
+            setFieldsGridData,
+            setToolBarAction,
+            setFiltersGridData,
+            setRowsGridData,
+            setValuesGridData,
+            setColumnsGridData,
+            $fieldsGridData,
+            $focusedItem
+        } = props;
         const isInFields = $fieldsGridData.current.indexOf($focusedItem.current) >= 0;
         const isInFilters = $filtersGridData.current.indexOf($focusedItem.current) >= 0;
         const isInRows = $rowsGridData.current.indexOf($focusedItem.current) >= 0;
@@ -236,30 +257,77 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             setToolBarAction(rowGridAction);
         }
 
+    };
+}
+
+export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
+    const localStorage = window.localStorage;
+    const display = useObserverValue(dimensionSelectorProps.$displayDimensionSelector);
+
+    const [$fieldsGridData, setFieldsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.dimensions);
+    const [$filtersGridData, setFiltersGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.filters);
+    const [$columnsGridData, setColumnsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.columns);
+    const [$rowsGridData, setRowsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.rows);
+    const [$valuesGridData, setValuesGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.values);
+
+    const [$displayFilterSelector, setDisplayFilterSelector] = useObserver(false);
+
+    useObserverListener([$filtersGridData], () => {
+        localStorage.setItem('filters', JSON.stringify($filtersGridData.current));
+    });
+    useObserverListener([$columnsGridData], () => {
+        localStorage.setItem('columns', JSON.stringify($columnsGridData.current));
+    });
+    useObserverListener([$rowsGridData], () => {
+        localStorage.setItem('rows', JSON.stringify($rowsGridData.current));
+    });
+    useObserverListener([$valuesGridData], () => {
+        localStorage.setItem('values', JSON.stringify($valuesGridData.current));
     });
 
+    const [$focusedItem, setFocusedItem] = useObserver<any>(undefined);
+    const [$toolBarAction, setToolBarAction] = useObserver<any>([]);
+    useObserverListener([$focusedItem, $fieldsGridData, $filtersGridData, $rowsGridData, $columnsGridData, $valuesGridData], setupAction({
+        $fieldsGridData,
+        $focusedItem,
+        $filtersGridData,
+        $rowsGridData,
+        $columnsGridData,
+        $valuesGridData,
+        dimensionSelectorProps,
+        setFieldsGridData,
+        setRowsGridData,
+        setColumnsGridData,
+        setFiltersGridData,
+        setValuesGridData,
+        setToolBarAction
+    }));
 
-    return <DimensionSelectorContext.Provider value={{}}><Vertical
+    function onFilterClicked(item: any) {
+        setDisplayFilterSelector(true)
+    }
+
+    return <DimensionSelectorContext.Provider value={{onFilterClicked}}><Vertical
         onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
         }}
         style={{
-            bottom: display ? 0 : '-80%',
+            bottom: display ? 0 : '-85%',
             height: '80%',
             position: 'absolute',
             width: '100%',
             transition: 'bottom 300ms ease-in-out',
-            overflow: 'auto',
-            backgroundColor: '#ddd',
-            padding: '0.5rem',
-            zIndex: 99
+            backgroundColor: '#fff',
+            padding: '0rem',
+            zIndex: 99,
+            boxShadow: '0px 0px 20px -2px #666'
         }}>
 
         <Vertical style={{height: '33.33%'}}>
             <ObserverValue observers={[$fieldsGridData, $focusedItem]} render={() => {
                 return <Grid defaultRowHeight={40} columns={[
-                    {title: 'Choose fields to add to report', field: 'name', width: '100%'}
+                    {title: 'Choose fields to add to report', field: 'name',hAlign:'left', width: '100%'}
                 ]} data={$fieldsGridData.current} rowResizerHidden={true}
                              defaultHeaderRowHeight={30}
 
@@ -270,11 +338,11 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 />
             }}/>
         </Vertical>
-        <Horizontal style={{height: '33.33%', overflow: 'auto', marginTop: '0.5rem'}}>
+        <Horizontal style={{height: '33.33%', overflow: 'auto',borderTop:'1px solid #999'}}>
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$filtersGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
-                        {title: 'Filters', field: 'name', width: '100%'}
+                        {title: 'Filters', field: 'name', width: '100%',hAlign:'left', cellComponent: ItemCellComponent}
                     ]} data={$filtersGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -283,10 +351,10 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                     />
                 }}/>
             </Vertical>
-            <Vertical style={{width: '50%', marginLeft: '0.5rem'}}>
+            <Vertical style={{width: '50%'}}>
                 <ObserverValue observers={[$columnsGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
-                        {title: 'Columns', field: 'name', width: '100%'}
+                        {title: 'Columns', field: 'name', width: '100%',hAlign:'left', cellComponent: ItemCellComponent}
                     ]} data={$columnsGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -296,11 +364,11 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 }}/>
             </Vertical>
         </Horizontal>
-        <Horizontal style={{height: '33.33%', overflow: 'auto', marginTop: '0.5rem'}}>
+        <Horizontal style={{height: '33.33%', overflow: 'auto',borderTop:'1px solid #999'}}>
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$rowsGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
-                        {title: 'Rows', field: 'name', width: '100%'}
+                        {title: 'Rows', field: 'name', width: '100%',hAlign:'left', cellComponent: ItemCellComponent}
                     ]} data={$rowsGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -309,10 +377,10 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                     />
                 }}/>
             </Vertical>
-            <Vertical style={{width: '50%', marginLeft: '0.5rem'}}>
+            <Vertical style={{width: '50%'}}>
                 <ObserverValue observers={[$valuesGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
-                        {title: 'Values', field: 'name', width: '100%'}
+                        {title: 'Values', field: 'name', width: '100%',hAlign:'left'}
                     ]} data={$valuesGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -325,7 +393,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         <ObserverValue observers={$toolBarAction} render={() => {
             const toolBarActions = $toolBarAction.current;
             const width = Math.round((100 / toolBarActions.length));
-            return <Horizontal style={{borderTop: '1px solid #CCC', marginTop: '0.5rem'}}>
+            return <Horizontal style={{borderTop: '1px solid #CCC'}}>
                 {toolBarActions.map((ta: any) => {
                     return <Vertical hAlign={'center'} style={{
                         width: `${width}%`,
@@ -338,6 +406,8 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 })}
             </Horizontal>
         }}/>
+        <FilterSelector $displayFilterSelector={$displayFilterSelector}
+                        setDisplayFilterSelector={setDisplayFilterSelector} $selectedItem={$focusedItem}/>
     </Vertical>
     </DimensionSelectorContext.Provider>
 

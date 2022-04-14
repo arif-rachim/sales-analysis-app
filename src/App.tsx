@@ -118,6 +118,7 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
             width: 100,
             field: key,
             title: key,
+            hAlign:'center',
             cellSpanFunction: defaultCellSpanFunction,
             cellComponent: CellComponent
         };
@@ -150,6 +151,7 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
                 group.columns = props.values.map((value: any) => {
                     const column: GridColumn = {
                         title: value.name,
+                        hAlign:'center',
                         field: colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id,
                         width: 100,
                         cellComponent: FetchDataCellComponent
@@ -186,6 +188,7 @@ const AppContext = createContext<any>({});
 export default function App() {
 
     const [$displayDimensionSelector, setDisplayDimensionSelector] = useObserver(false);
+
     const [$pinnedLeftColumnIndex, setPinnedLeftColumnIndex] = useObserver(-1);
     const [$gridColumns, setGridColumns] = useObserver<Array<GridColumn | GridColumnGroup>>([]);
     const [$gridRows, setGridRows] = useObserver([]);
@@ -211,15 +214,20 @@ export default function App() {
         //})();
     }, [rows, columns, values, setPinnedLeftColumnIndex, setGridColumns, setGridRows]);
     const fetchData = useFetchPostData();
+
     return <AppContext.Provider value={useMemo(() => ({fetchData}), [fetchData])}>
         <Vertical style={{height: '100%', overflow: 'hidden', position: 'relative'}}>
+            <Vertical style={{flexGrow: 1, overflow: 'auto'}}
+                      onClick={() => {
+                          setDisplayDimensionSelector(false);
+                      }}>
 
-            <PivotGrid setDisplayDimensionSelector={setDisplayDimensionSelector} $gridColumns={$gridColumns}
-                             $gridRows={$gridRows} $pinnedLeftColumnIndex={$pinnedLeftColumnIndex}/>
+            <PivotGrid $gridColumns={$gridColumns}
+                       $gridRows={$gridRows} $pinnedLeftColumnIndex={$pinnedLeftColumnIndex}/></Vertical>
             <Horizontal style={{borderTop: '1px solid #ddd'}}>
                 <Vertical style={{width: '50%', padding: '1rem', borderRight: '1px solid #ddd'}} hAlign={'center'}
                           onClick={() => {
-                              setDisplayDimensionSelector((old: boolean) => !old);
+                              setDisplayDimensionSelector(true);
                           }}>
                     Configure Pivot
                 </Vertical>
@@ -239,7 +247,8 @@ export default function App() {
                                        setGridRows
                                    });
                                }} initialDimension={initialDimension}/>
-        </Vertical></AppContext.Provider>
+        </Vertical>
+    </AppContext.Provider>
 }
 
 function debounce(func: Function, timeout = 300) {
@@ -300,7 +309,7 @@ function useFetchPostData() {
 }
 
 
-async function fetchData(url: string, signal?: AbortSignal) {
+export async function fetchData(url: string, signal?: AbortSignal) {
     const {hostname, protocol} = window.location;
     const address = `${protocol}//${hostname}:3001/v1/${url}`;
     try {
