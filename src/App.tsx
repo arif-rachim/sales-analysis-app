@@ -8,6 +8,7 @@ import {CellComponentStyledProps} from "./grid/Sheet";
 import {generateUniqueID} from "web-vitals/dist/modules/lib/generateUniqueID";
 import {DimensionSelector} from "./components/DimensionSelector";
 import {PivotGrid} from "./components/PivotGrid";
+import {IoSettingsOutline} from "react-icons/io5";
 
 const FIELD_SEPARATOR: string = '⚮';
 
@@ -271,15 +272,13 @@ export default function App() {
 
                 <PivotGrid $gridColumns={$gridColumns}
                            $gridRows={$gridRows} $pinnedLeftColumnIndex={$pinnedLeftColumnIndex}/></Vertical>
-            <Horizontal style={{borderTop: '1px solid #ddd'}}>
-                <Vertical style={{width: '50%', padding: '1rem', borderRight: '1px solid #ddd'}} hAlign={'center'}
+            <Horizontal>
+                <Vertical style={{position:'absolute',bottom:10,right:10,border:'1px solid #ddd',cursor:'pointer',borderRadius:50,width:50,height:50,fontSize:40,backgroundColor:'rgba(0,0,0,0.1)',color:'#333',boxShadow:'0px 0px 5px -3px rgba(0,0,0,0.9)'}} hAlign={'center'}
+                          vAlign={'center'}
                           onClick={() => {
                               setDisplayDimensionSelector(true);
                           }}>
-                    Configure Pivot
-                </Vertical>
-                <Vertical style={{width: '50%', padding: '1rem'}} hAlign={'center'}>
-                    Settings
+                    <IoSettingsOutline/>
                 </Vertical>
             </Horizontal>
             <DimensionSelector $displayDimensionSelector={$displayDimensionSelector}

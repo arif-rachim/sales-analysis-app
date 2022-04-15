@@ -14,7 +14,7 @@ export function PivotGrid(props: PivotGridProps) {
     const {$gridRows, $gridColumns, $pinnedLeftColumnIndex} = props;
     const columns: any = useObserverValue($gridColumns);
     const rows: any = useObserverValue($gridRows);
-    return <Vertical style={{height: '100%', fontSize: 10}}>
+    return <Vertical style={{height: '100%', fontSize: 11}}>
         <Grid columns={columns} data={rows}
               debugMode={false}
               filterHidden={true}
