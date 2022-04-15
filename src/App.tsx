@@ -160,11 +160,30 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
     });
     const colsLength = cols.length;
 
-    const gridColumnsData: Array<GridColumn | GridColumnGroup> = columnsData.reduce((acc: Array<GridColumn | GridColumnGroup>, colData: any) => {
+    const gridColumnsData: Array<GridColumn | GridColumnGroup> = columnsData.filter((colData:any) => {
+        // we filter first
         const colKey: string = Object.keys(colData)[0];
         const colVal: string = colData[colKey];
         const keys: Array<string> = colKey.split('_');
         const values: Array<string> = colVal.split('#');
+        const data = keys.reduce((acc:any,key:string,index:number) => {
+            acc[key] = values[index];
+            return acc;
+        },{});
+        return props.columns.reduce((acc:boolean,col:Dimension) => {
+            if(col.allSelected){
+                return acc && true;
+            }
+            const fieldValue = data[col.id];
+            return acc && col.filteredItems.includes(fieldValue);
+        },true);
+
+    }).reduce((acc: Array<GridColumn | GridColumnGroup>, colData: any) => {
+        const colKey: string = Object.keys(colData)[0];
+        const colVal: string = colData[colKey];
+        const keys: Array<string> = colKey.split('_');
+        const values: Array<string> = colVal.split('#');
+
         const lastIndexKey = keys.length;
         keys.reduce((acc: Array<GridColumn | GridColumnGroup>, key: string, index: number) => {
             const isNotLastIndex = index < (lastIndexKey - 1);
