@@ -13,26 +13,17 @@ fastify.get('/', async (request, reply) => {
 })
 
 fastify.post('/v1/compoundRequest',async (req,res) => {
-    // const result = Promise.all(req.body.map(({id,method,body}) => {
-    //     return new Promise(resolve => {
-    //         const {filters,values} = body;
-    //         const whereString = filters.map((key,index) => {
-    //             return `"${key}" = '${values[index]}'`
-    //         }).join(' and ');
-    //         const sqlQuery = `select sum(${method}) as value from sales where ${whereString} `;
-    //         console.log(sqlQuery);
-    //         sequelize.query(sqlQuery).then(([[{value}]]) => {
-    //             resolve({value,id})
-    //         })
-    //     });
-    // }));
-    // return result;
     const compoundQuery = req.body.map(({id,method,body},index) => {
-            const {filters,values} = body;
+            const {filters,values,onlyContains} = body;
             const whereString = filters.map((key,index) => {
                 return `"${key}" = '${values[index]}'`
             }).join(' and ');
-            return `(select sum(${method}) as "${id}" from sales where ${whereString}) as "${index}"`;
+            const onlyContainsString = Object.keys(onlyContains).map(key => {
+                const val = onlyContains[key].map(key => `'${key}'`);
+                return `"${key}" in (${val.join(',')})`
+            }).join(' and ');
+            const query = `(select sum(${method}) as "${id}" from sales where ${whereString} ${onlyContainsString.length > 0 ? `and ${onlyContainsString}`:''}) as "${index}"`;
+            return query;
     });
     const sqlQuery = `select * from ${compoundQuery.join(' , ')}`;
     const [[data]] = await sequelize.query(sqlQuery);

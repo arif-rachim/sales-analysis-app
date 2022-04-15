@@ -399,7 +399,7 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
         (async () => {
             setValue('loading');
             try {
-                const result = await fetchData(valueType, {filters, values, onlyContain: ocs});
+                const result = await fetchData(valueType, {filters, values, onlyContains: ocs});
                 const value = parseInt(result || '0');
                 setValue(value);
             } catch (err) {
