@@ -1,6 +1,6 @@
 import Vertical from "../layout/Vertical";
-import {emptyObserver, emptySetObserver, Observer, useObserver} from "../observer/useObserver";
-import {createContext, Dispatch, MutableRefObject, useContext, useMemo, useState} from "react";
+import {emptyObserver, Observer, useObserver} from "../observer/useObserver";
+import {createContext, Dispatch, MutableRefObject, useContext, useState} from "react";
 import {ObserverValue, useObserverListener, useObserverValue} from "../observer";
 import Horizontal from "../layout/Horizontal";
 import {Grid, HeaderCellComponentProps} from "../grid/Grid";
@@ -61,6 +61,7 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
 }
 
 function CheckboxHeaderCellComponent(cell:HeaderCellComponentProps){
+
     const context = useContext(FilterSelectorContext);
 
     const $selectedItem = context?.current.$selectedItem || emptyObserver;
