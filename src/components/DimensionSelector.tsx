@@ -1,4 +1,4 @@
-import React, {createContext, useContext} from "react";
+import React, {createContext, useContext, useMemo} from "react";
 import {ObserverValue, useObserver, useObserverListener, useObserverValue} from "../observer";
 import Vertical from "../layout/Vertical";
 import {Grid} from "../grid/Grid";
@@ -6,13 +6,15 @@ import Horizontal from "../layout/Horizontal";
 import {Observer} from "../observer/useObserver";
 import {CellComponentStyledProps} from "../grid/Sheet";
 import {IoFilterOutline} from "react-icons/io5";
+import FilterSelector from "./FilterSelector";
+import {Dimension} from "../App";
 
 const DimensionSelectorContext = createContext<any>({});
 
 interface DimensionSelectorProps {
     $displayDimensionSelector: Observer<boolean>;
-    onDimensionChanged: (props: { columns: Array<any>, rows: Array<any>, filters: Array<any>, values: Array<any> }) => void,
-    initialDimension: { filters: any; columns: any; rows: any; values: any; dimensions: any };
+    onDimensionChanged: (props: { columns: Array<Dimension>, rows: Array<Dimension>, filters: Array<Dimension>, values: Array<Dimension> }) => void,
+    initialDimension: { filters: Array<Dimension>; columns: Array<Dimension>; rows: Array<Dimension>; values: Array<Dimension>; dimensions: Array<Dimension> };
 }
 
 function ItemCellComponent(props: CellComponentStyledProps) {
@@ -264,11 +266,13 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
     const localStorage = window.localStorage;
     const display = useObserverValue(dimensionSelectorProps.$displayDimensionSelector);
 
-    const [$fieldsGridData, setFieldsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.dimensions);
-    const [$filtersGridData, setFiltersGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.filters);
-    const [$columnsGridData, setColumnsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.columns);
-    const [$rowsGridData, setRowsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.rows);
-    const [$valuesGridData, setValuesGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.values);
+    const [$fieldsGridData, setFieldsGridData] = useObserver<Array<Dimension>>(dimensionSelectorProps.initialDimension.dimensions);
+    const [$filtersGridData, setFiltersGridData] = useObserver<Array<Dimension>>(dimensionSelectorProps.initialDimension.filters);
+    const [$columnsGridData, setColumnsGridData] = useObserver<Array<Dimension>>(dimensionSelectorProps.initialDimension.columns);
+    const [$rowsGridData, setRowsGridData] = useObserver<Array<Dimension>>(dimensionSelectorProps.initialDimension.rows);
+    const [$valuesGridData, setValuesGridData] = useObserver<Array<Dimension>>(dimensionSelectorProps.initialDimension.values);
+
+    const [$displayFilterSelector,setDisplayFilterSelector] = useObserver<boolean>(false);
 
     useObserverListener([$filtersGridData], () => {
         localStorage.setItem('filters', JSON.stringify($filtersGridData.current));
@@ -282,7 +286,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
     useObserverListener([$valuesGridData], () => {
         localStorage.setItem('values', JSON.stringify($valuesGridData.current));
     });
-    const [$focusedItem, setFocusedItem] = useObserver<any>(undefined);
+    const [$focusedItem, setFocusedItem] = useObserver<Dimension>({id:'',allSelected:false,filteredItems:[],name:''});
     const [$toolBarAction, setToolBarAction] = useObserver<any>([]);
     useObserverListener([$focusedItem, $fieldsGridData, $filtersGridData, $rowsGridData, $columnsGridData, $valuesGridData], setupAction({
         $fieldsGridData,
@@ -300,7 +304,15 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         setToolBarAction
     }));
 
-    return <DimensionSelectorContext.Provider value={{}}><Vertical
+    const contextProviderValue = useMemo(() => {
+        function onFilterClicked(){
+            setDisplayFilterSelector(true);
+        }
+        return {
+            onFilterClicked
+        }
+    },[setDisplayFilterSelector]);
+    return <DimensionSelectorContext.Provider value={contextProviderValue}><Vertical
         onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -397,7 +409,39 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 })}
             </Horizontal>
         }}/>
+        <FilterSelector $displayFilterSelector={$displayFilterSelector}
+                        setDisplayFilterSelector={setDisplayFilterSelector}
+                        $selectedItem={$focusedItem}
+                        onSelectedItemChanged={(selectedItem) => {
 
+                            const isInFilters = $filtersGridData.current.indexOf($focusedItem.current) >= 0;
+                            const isInRows = $rowsGridData.current.indexOf($focusedItem.current) >= 0;
+                            const isInColumns = $columnsGridData.current.indexOf($focusedItem.current) >= 0;
+                            if(isInFilters){
+                                setFiltersGridData(oldData => {
+                                   const currentIndex = oldData.indexOf($focusedItem.current);
+                                   oldData[currentIndex] = selectedItem;
+                                   return [...oldData];
+                                });
+                            }
+                            if(isInRows){
+                                setRowsGridData(oldData => {
+                                    const currentIndex = oldData.indexOf($focusedItem.current);
+                                    oldData[currentIndex] = selectedItem;
+                                    return [...oldData];
+                                });
+                            }
+                            if(isInColumns){
+                                setColumnsGridData(oldData => {
+                                    const currentIndex = oldData.indexOf($focusedItem.current);
+                                    oldData[currentIndex] = selectedItem;
+                                    return [...oldData];
+                                });
+                            }
+                            setFocusedItem(selectedItem);
+                        }}
+
+        />
     </Vertical>
     </DimensionSelectorContext.Provider>
 

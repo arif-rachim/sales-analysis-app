@@ -86,25 +86,18 @@ const SalesSchema: any = {
         filteredItems : []
     },
 };
+export interface Dimension{
+    id:string;
+    name:string;
+    allSelected:boolean;
+    filteredItems:Array<string>;
+}
 
-const dimensions = Object.keys(SalesSchema).map((key: string) => {
+const dimensions:Array<Dimension> = Object.keys(SalesSchema).map((key: string) => {
     const item = SalesSchema[key];
     return {id: key, ...item}
 })
 
-// const dimensions = [
-//     {id: 'storeCode', name: 'Store Code'},
-//     {id: 'storeName', name: 'Store Name'},
-//     {id: 'store', name: 'Store Type'},
-//     {id: 'location', name: 'Store Location'},
-//     {id: 'city', name: 'Store City'},
-//     {id: 'groupCode', name: 'Material Group Code'},
-//     {id: 'name', name: 'Material Name'},
-//     {id: 'category', name: 'Material Category'},
-//     {id: 'date', name: 'Date'},
-//     {id: 'quantity', name: 'Sales Quantity'},
-//     {id: 'value', name: 'Sales Value'}
-// ];
 
 function loadDimension(dimensionName: string) {
     const dimension = localStorage.getItem(dimensionName);
