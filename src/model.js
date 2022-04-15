@@ -10,14 +10,14 @@ const sequelize = new Sequelize(`sqlite:${path.join('./output', 'sales.db')}`,{
     }
 });
 */
-const sequelize = new Sequelize('postgres://postgres:arifrachim@localhost:5432/sales',{
+const sequelize = new Sequelize('postgres://postgres:arifrachim@localhost:5432/sales', {
     pool: {
         max: 10,
         min: 0,
         acquire: 30000,
         idle: 10000
     },
-    logging:false
+    logging: false
 })
 
 class Sales extends Model {
@@ -42,88 +42,90 @@ const SalesSchema = {
         primaryKey: true,
         autoIncrement: true,
         comment: 'Id',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     storeCode: {
         type: DataTypes.STRING,
         comment: 'Store Code',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     storeName: {
         type: DataTypes.STRING,
         comment: 'Store Name',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     store: {
         type: DataTypes.STRING,
         comment: 'Store Type',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     location: {
         type: DataTypes.STRING,
         comment: 'Store Location',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     city: {
         type: DataTypes.STRING,
         comment: 'Store City',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     groupCode: {
         type: DataTypes.STRING,
         comment: 'Material Group Code',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     groupName: {
         type: DataTypes.STRING,
         comment: 'Material Group Name',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     brand: {
         type: DataTypes.STRING,
         comment: 'Material Brand',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     code: {
         type: DataTypes.STRING,
         comment: 'Material Code',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     name: {
         type: DataTypes.STRING,
         comment: 'Material Name',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     category: {
         type: DataTypes.STRING,
         comment: 'Material Category',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     date: {
         type: DataTypes.DATEONLY,
         comment: 'Date',
-        isQuantifiable : false
+        isQuantifiable: false
     },
     quantity: {
         type: DataTypes.INTEGER,
         comment: 'Quantity',
-        isQuantifiable : true
+        isQuantifiable: true
     },
     value: {
         type: DataTypes.DOUBLE,
         comment: 'Value',
-        isQuantifiable : true
+        isQuantifiable: true
     }
 };
-Sales.init(SalesSchema, {sequelize, modelName: 'sales',indexes:[
+Sales.init(SalesSchema, {
+    sequelize, modelName: 'sales', indexes: [
         {
             name: 'city_storeName_category',
-            fields: ['city','storeName', 'category']
+            fields: ['city', 'storeName', 'category']
         },
         {
             name: 'storeName_location_city_brand',
-            fields: ['storeName','location', 'city','brand']
+            fields: ['storeName', 'location', 'city', 'brand']
         }
-    ]});
+    ]
+});
 
 module.exports = {Sales, ImportedFile, sequelize, SalesSchema};

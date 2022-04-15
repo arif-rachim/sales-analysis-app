@@ -65,9 +65,13 @@ export function useObserver<S>(initialValue: Initialization<S>): [Observer<S>, D
     }, []);
 }
 
-export const emptyObserver:Observer<any> = {
-    current:null,
-    addListener : () => { return () => {}}
+export const emptyObserver: Observer<any> = {
+    current: null,
+    addListener: () => {
+        return () => {
+        }
+    }
 }
 
-export const emptySetObserver:Dispatch<SetObserverAction<any>> = () => {};
+export const emptySetObserver: Dispatch<SetObserverAction<any>> = () => {
+};

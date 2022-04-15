@@ -287,7 +287,8 @@ export function CellComponentForColumnHeader(props: HeaderCellComponentProps) {
 
     const shouldHaveFilter = (props.rowIndex + (props?.rowSpan || 0)) === props.dataSource.length;
     return <Vertical style={{height: '100%'}}>
-        <Vertical style={{flexGrow: 1, padding: '0px 5px', backgroundColor: '#ddd', color: '#333',fontWeight:'bold'}} hAlign={props.column.hAlign}
+        <Vertical style={{flexGrow: 1, padding: '0px 5px', backgroundColor: '#ddd', color: '#333', fontWeight: 'bold'}}
+                  hAlign={props.column.hAlign}
                   vAlign={'center'}
                   onClick={handleSortClicked}>
             <Horizontal>

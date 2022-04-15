@@ -272,7 +272,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
     const [$rowsGridData, setRowsGridData] = useObserver<Array<Dimension>>(dimensionSelectorProps.initialDimension.rows);
     const [$valuesGridData, setValuesGridData] = useObserver<Array<Dimension>>(dimensionSelectorProps.initialDimension.values);
 
-    const [$displayFilterSelector,setDisplayFilterSelector] = useObserver<boolean>(false);
+    const [$displayFilterSelector, setDisplayFilterSelector] = useObserver<boolean>(false);
 
     useObserverListener([$filtersGridData], () => {
         localStorage.setItem('filters', JSON.stringify($filtersGridData.current));
@@ -286,7 +286,12 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
     useObserverListener([$valuesGridData], () => {
         localStorage.setItem('values', JSON.stringify($valuesGridData.current));
     });
-    const [$focusedItem, setFocusedItem] = useObserver<Dimension>({id:'',allSelected:false,filteredItems:[],name:''});
+    const [$focusedItem, setFocusedItem] = useObserver<Dimension>({
+        id: '',
+        allSelected: false,
+        filteredItems: [],
+        name: ''
+    });
     const [$toolBarAction, setToolBarAction] = useObserver<any>([]);
     useObserverListener([$focusedItem, $fieldsGridData, $filtersGridData, $rowsGridData, $columnsGridData, $valuesGridData], setupAction({
         $fieldsGridData,
@@ -305,13 +310,14 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
     }));
 
     const contextProviderValue = useMemo(() => {
-        function onFilterClicked(){
+        function onFilterClicked() {
             setDisplayFilterSelector(true);
         }
+
         return {
             onFilterClicked
         }
-    },[setDisplayFilterSelector]);
+    }, [setDisplayFilterSelector]);
     return <DimensionSelectorContext.Provider value={contextProviderValue}><Vertical
         onClick={(event) => {
             event.preventDefault();
@@ -332,7 +338,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         <Vertical style={{height: '33.33%'}}>
             <ObserverValue observers={[$fieldsGridData, $focusedItem]} render={() => {
                 return <Grid defaultRowHeight={40} columns={[
-                    {title: 'Choose fields to add to report', field: 'name',hAlign:'left', width: '100%'}
+                    {title: 'Choose fields to add to report', field: 'name', hAlign: 'left', width: '100%'}
                 ]} data={$fieldsGridData.current} rowResizerHidden={true}
                              defaultHeaderRowHeight={30}
                              focusedDataItem={$focusedItem.current}
@@ -341,11 +347,17 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 />
             }}/>
         </Vertical>
-        <Horizontal style={{height: '33.33%', overflow: 'auto',borderTop:'1px solid #999'}}>
+        <Horizontal style={{height: '33.33%', overflow: 'auto', borderTop: '1px solid #999'}}>
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$filtersGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
-                        {title: 'Filters', field: 'name', width: '100%',hAlign:'left', cellComponent: ItemCellComponent}
+                        {
+                            title: 'Filters',
+                            field: 'name',
+                            width: '100%',
+                            hAlign: 'left',
+                            cellComponent: ItemCellComponent
+                        }
                     ]} data={$filtersGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -357,7 +369,13 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             <Vertical style={{width: '50%'}}>
                 <ObserverValue observers={[$columnsGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
-                        {title: 'Columns', field: 'name', width: '100%',hAlign:'left', cellComponent: ItemCellComponent}
+                        {
+                            title: 'Columns',
+                            field: 'name',
+                            width: '100%',
+                            hAlign: 'left',
+                            cellComponent: ItemCellComponent
+                        }
                     ]} data={$columnsGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -367,11 +385,11 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 }}/>
             </Vertical>
         </Horizontal>
-        <Horizontal style={{height: '33.33%', overflow: 'auto',borderTop:'1px solid #999'}}>
+        <Horizontal style={{height: '33.33%', overflow: 'auto', borderTop: '1px solid #999'}}>
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$rowsGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
-                        {title: 'Rows', field: 'name', width: '100%',hAlign:'left', cellComponent: ItemCellComponent}
+                        {title: 'Rows', field: 'name', width: '100%', hAlign: 'left', cellComponent: ItemCellComponent}
                     ]} data={$rowsGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -383,7 +401,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             <Vertical style={{width: '50%'}}>
                 <ObserverValue observers={[$valuesGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={40} columns={[
-                        {title: 'Values', field: 'name', width: '100%',hAlign:'left'}
+                        {title: 'Values', field: 'name', width: '100%', hAlign: 'left'}
                     ]} data={$valuesGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -417,21 +435,21 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                             const isInFilters = $filtersGridData.current.indexOf($focusedItem.current) >= 0;
                             const isInRows = $rowsGridData.current.indexOf($focusedItem.current) >= 0;
                             const isInColumns = $columnsGridData.current.indexOf($focusedItem.current) >= 0;
-                            if(isInFilters){
+                            if (isInFilters) {
                                 setFiltersGridData(oldData => {
-                                   const currentIndex = oldData.indexOf($focusedItem.current);
-                                   oldData[currentIndex] = selectedItem;
-                                   return [...oldData];
+                                    const currentIndex = oldData.indexOf($focusedItem.current);
+                                    oldData[currentIndex] = selectedItem;
+                                    return [...oldData];
                                 });
                             }
-                            if(isInRows){
+                            if (isInRows) {
                                 setRowsGridData(oldData => {
                                     const currentIndex = oldData.indexOf($focusedItem.current);
                                     oldData[currentIndex] = selectedItem;
                                     return [...oldData];
                                 });
                             }
-                            if(isInColumns){
+                            if (isInColumns) {
                                 setColumnsGridData(oldData => {
                                     const currentIndex = oldData.indexOf($focusedItem.current);
                                     oldData[currentIndex] = selectedItem;

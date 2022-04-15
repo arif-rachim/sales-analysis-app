@@ -17,13 +17,21 @@ interface HorizontalProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 export default React.forwardRef(function Horizontal(props: HorizontalProps, ref: ForwardedRef<HTMLDivElement>): JSX.Element {
     const {children, vAlign, hAlign, style, ...properties} = props;
-    const justifyContent = hAlign === undefined ? hAlign : {left: 'flex-start', right: 'flex-end', center: 'center'}[hAlign];
-    const alignItems = vAlign === undefined ? vAlign : {top: 'flex-start', bottom: 'flex-end', center: 'center'}[vAlign];
+    const justifyContent = hAlign === undefined ? hAlign : {
+        left: 'flex-start',
+        right: 'flex-end',
+        center: 'center'
+    }[hAlign];
+    const alignItems = vAlign === undefined ? vAlign : {
+        top: 'flex-start',
+        bottom: 'flex-end',
+        center: 'center'
+    }[vAlign];
 
     return <div ref={ref} style={{
         display: 'flex',
         flexDirection: 'row',
-        boxSizing:'border-box',
+        boxSizing: 'border-box',
         justifyContent,
         alignItems, ...style
     }} {...properties}>{children}</div>

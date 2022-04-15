@@ -1,19 +1,19 @@
 import Vertical from "../layout/Vertical";
 import {emptyObserver, Observer, useObserver} from "../observer/useObserver";
-import {createContext, Dispatch, MutableRefObject, useContext, useState} from "react";
+import {createContext, Dispatch, MutableRefObject, useContext, useRef, useState} from "react";
 import {ObserverValue, useObserverListener, useObserverValue} from "../observer";
 import Horizontal from "../layout/Horizontal";
-import {Grid, HeaderCellComponentProps} from "../grid/Grid";
+import {Grid} from "../grid/Grid";
 import {Dimension, fetchData} from "../App";
 import {CellComponentStyledProps} from "../grid/Sheet";
-import {useRef} from "react";
+
 interface LabelValue {
     id: string;
     label: string;
 }
 
-const FilterSelectorContext = createContext<MutableRefObject<{$selectedItem:Observer<Dimension>,onSelectedItemChanged:(item:Dimension) => void,$gridData:Observer<Array<any>>}>|undefined>(undefined);
-export default function FilterSelector(props: { $displayFilterSelector: Observer<boolean>, setDisplayFilterSelector: Dispatch<boolean>, $selectedItem: Observer<Dimension>, onSelectedItemChanged: (selectedItem:any) => void }) {
+const FilterSelectorContext = createContext<MutableRefObject<{ $selectedItem: Observer<Dimension>, onSelectedItemChanged: (item: Dimension) => void, $gridData: Observer<Array<any>> }> | undefined>(undefined);
+export default function FilterSelector(props: { $displayFilterSelector: Observer<boolean>, setDisplayFilterSelector: Dispatch<boolean>, $selectedItem: Observer<Dimension>, onSelectedItemChanged: (selectedItem: any) => void }) {
     const {$displayFilterSelector, setDisplayFilterSelector, $selectedItem, onSelectedItemChanged} = props;
     const display = useObserverValue($displayFilterSelector);
     const [$gridData, setGridData] = useObserver<Array<LabelValue>>([]);
@@ -33,8 +33,8 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
         });
         setGridData(values);
     });
-    const selectorContextRef = useRef({$selectedItem,onSelectedItemChanged,$gridData});
-    selectorContextRef.current = {$selectedItem,onSelectedItemChanged,$gridData};
+    const selectorContextRef = useRef({$selectedItem, onSelectedItemChanged, $gridData});
+    selectorContextRef.current = {$selectedItem, onSelectedItemChanged, $gridData};
     return <FilterSelectorContext.Provider value={selectorContextRef}>
         <Vertical
             style={{
@@ -46,12 +46,19 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
                 backgroundColor: '#fff',
                 padding: '0rem',
             }}>
-            <Horizontal style={{padding:5}} hAlign={'right'}>
+            <Horizontal style={{padding: 5}} hAlign={'right'}>
                 <button onClick={() => setDisplayFilterSelector(false)}>Close</button>
             </Horizontal>
             <ObserverValue observers={$gridData} render={() => {
                 return <Grid columns={[
-                    {title: '', field: 'id', width: 50, hAlign: 'left', cellComponent: CheckboxCellComponent,headerCellComponent:CheckboxHeaderCellComponent},
+                    {
+                        title: '',
+                        field: 'id',
+                        width: 50,
+                        hAlign: 'left',
+                        cellComponent: CheckboxCellComponent,
+                        headerCellComponent: CheckboxHeaderCellComponent
+                    },
                     {title: 'Name', field: 'label', width: '100%', hAlign: 'left'}
                 ]} data={$gridData.current}/>
             }}/>
@@ -60,7 +67,7 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
     </FilterSelectorContext.Provider>
 }
 
-function CheckboxHeaderCellComponent(cell:HeaderCellComponentProps){
+function CheckboxHeaderCellComponent() {
 
     const context = useContext(FilterSelectorContext);
 
@@ -69,18 +76,19 @@ function CheckboxHeaderCellComponent(cell:HeaderCellComponentProps){
     useObserverListener($selectedItem, () => {
         setAllSelected($selectedItem.current.allSelected);
     })
-    return <Vertical style={{backgroundColor:'#ddd', height:'100%'}} vAlign={'center'} hAlign={'center'}>
+    return <Vertical style={{backgroundColor: '#ddd', height: '100%'}} vAlign={'center'} hAlign={'center'}>
         <input type="checkbox" checked={allSelected}
                onChange={(event) => {
                    const isChecked = event.target.checked;
-                   const selectedItem:Dimension = $selectedItem.current;
+                   const selectedItem: Dimension = $selectedItem.current;
                    selectedItem.allSelected = isChecked;
-                   if(!isChecked){
+                   if (!isChecked) {
                        selectedItem.filteredItems = [];
-                   }else{
+                   } else {
                        selectedItem.filteredItems = context?.current.$gridData.current.map<string>(d => d?.id) || [];
                    }
-                   const onSelectedItemChanged = context?.current.onSelectedItemChanged || (() => {});
+                   const onSelectedItemChanged = context?.current.onSelectedItemChanged || (() => {
+                   });
                    onSelectedItemChanged({...selectedItem});
 
                }}
@@ -97,7 +105,7 @@ function CheckboxCellComponent(props: CellComponentStyledProps) {
         setChecked($selectedItem.current.filteredItems.includes(props.dataItem.id));
     })
     const dataItem: LabelValue = props.dataItem;
-    const selectedItem:Dimension = $selectedItem.current;
+    const selectedItem: Dimension = $selectedItem.current;
     return <Vertical style={{...props.cellStyle, height: '100%'}} hAlign={'center'} vAlign={'center'}>
         <input type="checkbox" checked={isChecked || selectedItem.allSelected}
                onChange={(event) => {
@@ -107,10 +115,11 @@ function CheckboxCellComponent(props: CellComponentStyledProps) {
                    if (isChecked) {
                        filteredItems.push(dataItem.id);
                    } else {
-                       $selectedItem.current.filteredItems = filteredItems.filter((x:string) => x !== dataItem.id);
+                       $selectedItem.current.filteredItems = filteredItems.filter((x: string) => x !== dataItem.id);
                        $selectedItem.current.allSelected = false;
                    }
-                   const onSelectedItemChanged = context?.current.onSelectedItemChanged || (() => {});
+                   const onSelectedItemChanged = context?.current.onSelectedItemChanged || (() => {
+                   });
                    onSelectedItemChanged({...$selectedItem.current});
 
                }}

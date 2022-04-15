@@ -3,8 +3,7 @@ import {defaultCellSpanFunction, GridColumn, GridColumnGroup} from "./grid/Grid"
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import Vertical from "./layout/Vertical";
 import Horizontal from "./layout/Horizontal";
-import {useObserver} from "./observer";
-import {ObserverValue} from "./observer";
+import {ObserverValue, useObserver} from "./observer";
 import {CellComponentStyledProps} from "./grid/Sheet";
 import {generateUniqueID} from "web-vitals/dist/modules/lib/generateUniqueID";
 import {DimensionSelector} from "./components/DimensionSelector";
@@ -16,84 +15,85 @@ const SalesSchema: any = {
     quantity: {
         name: 'QTY',
         isNumber: true,
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     value: {
         name: 'AED',
         isNumber: true,
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     storeCode: {
         name: 'Store Code',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     storeName: {
         name: 'Store Name',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     store: {
         name: 'Store Type',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     location: {
         name: 'Store Location',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     city: {
         name: 'Store City',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     groupCode: {
         name: 'Material Group Code',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     groupName: {
         name: 'Material Group Name',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     brand: {
         name: 'Material Brand',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     code: {
         name: 'Material Code',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     name: {
         name: 'Material Name',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     category: {
         name: 'Material Category',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
     date: {
         name: 'Date',
-        allSelected:true,
-        filteredItems : []
+        allSelected: true,
+        filteredItems: []
     },
 };
-export interface Dimension{
-    id:string;
-    name:string;
-    allSelected:boolean;
-    filteredItems:Array<string>;
+
+export interface Dimension {
+    id: string;
+    name: string;
+    allSelected: boolean;
+    filteredItems: Array<string>;
 }
 
-const dimensions:Array<Dimension> = Object.keys(SalesSchema).map((key: string) => {
+const dimensions: Array<Dimension> = Object.keys(SalesSchema).map((key: string) => {
     const item = SalesSchema[key];
     return {id: key, ...item}
 })
@@ -135,16 +135,16 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
             return out;
         }, {});
     });
-    rowsData = rowsData.filter((rowData:any) => {
-        return props.rows.reduce((acc:boolean,row:Dimension) => {
-            if(row.allSelected){
+    rowsData = rowsData.filter((rowData: any) => {
+        return props.rows.reduce((acc: boolean, row: Dimension) => {
+            if (row.allSelected) {
                 return acc && true;
             }
             const fieldValue = rowData[row.id];
             return acc && row.filteredItems.includes(fieldValue);
-        },true);
+        }, true);
     });
-    if(rowsData.length === 0){
+    if (rowsData.length === 0) {
         return;
     }
     const cols = Object.keys(rowsData[0]).map(key => {
@@ -152,7 +152,7 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
             width: 100,
             field: key,
             title: key,
-            hAlign:'center',
+            hAlign: 'center',
             cellSpanFunction: defaultCellSpanFunction,
             cellComponent: CellComponent
         };
@@ -160,23 +160,23 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
     });
     const colsLength = cols.length;
 
-    const gridColumnsData: Array<GridColumn | GridColumnGroup> = columnsData.filter((colData:any) => {
+    const gridColumnsData: Array<GridColumn | GridColumnGroup> = columnsData.filter((colData: any) => {
         // we filter first
         const colKey: string = Object.keys(colData)[0];
         const colVal: string = colData[colKey];
         const keys: Array<string> = colKey.split('_');
         const values: Array<string> = colVal.split('#');
-        const data = keys.reduce((acc:any,key:string,index:number) => {
+        const data = keys.reduce((acc: any, key: string, index: number) => {
             acc[key] = values[index];
             return acc;
-        },{});
-        return props.columns.reduce((acc:boolean,col:Dimension) => {
-            if(col.allSelected){
+        }, {});
+        return props.columns.reduce((acc: boolean, col: Dimension) => {
+            if (col.allSelected) {
                 return acc && true;
             }
             const fieldValue = data[col.id];
             return acc && col.filteredItems.includes(fieldValue);
-        },true);
+        }, true);
 
     }).reduce((acc: Array<GridColumn | GridColumnGroup>, colData: any) => {
         const colKey: string = Object.keys(colData)[0];
@@ -205,7 +205,7 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
                 group.columns = props.values.map((value: any) => {
                     const column: GridColumn = {
                         title: value.name,
-                        hAlign:'center',
+                        hAlign: 'center',
                         field: colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id,
                         width: 100,
                         cellComponent: FetchDataCellComponent
@@ -276,8 +276,8 @@ export default function App() {
                           setDisplayDimensionSelector(false);
                       }}>
 
-            <PivotGrid $gridColumns={$gridColumns}
-                       $gridRows={$gridRows} $pinnedLeftColumnIndex={$pinnedLeftColumnIndex}/></Vertical>
+                <PivotGrid $gridColumns={$gridColumns}
+                           $gridRows={$gridRows} $pinnedLeftColumnIndex={$pinnedLeftColumnIndex}/></Vertical>
             <Horizontal style={{borderTop: '1px solid #ddd'}}>
                 <Vertical style={{width: '50%', padding: '1rem', borderRight: '1px solid #ddd'}} hAlign={'center'}
                           onClick={() => {

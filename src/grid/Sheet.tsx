@@ -157,7 +157,7 @@ function cellStyleFunctionDefaultImplementation(props: CellStyleFunctionProperti
         backgroundColor: isFocused ? '#99D9EA' : (props.rowIndex % 2) ? '#f6f6f6' : '#ffffff',
         height: '100%',
         overflow: 'hidden',
-        textAlign : props.column.hAlign
+        textAlign: props.column.hAlign
     }
 }
 
