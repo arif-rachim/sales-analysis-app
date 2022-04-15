@@ -3,7 +3,7 @@ import {defaultCellSpanFunction, GridColumn, GridColumnGroup} from "./grid/Grid"
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import Vertical from "./layout/Vertical";
 import Horizontal from "./layout/Horizontal";
-import {useObserver} from "./observer/useObserver";
+import {useObserver} from "./observer";
 import {ObserverValue} from "./observer";
 import {CellComponentStyledProps} from "./grid/Sheet";
 import {generateUniqueID} from "web-vitals/dist/modules/lib/generateUniqueID";
@@ -14,53 +14,82 @@ const FIELD_SEPARATOR: string = '⚮';
 
 const SalesSchema: any = {
     quantity: {
-        comment: 'QTY',
-        isNumber: true
+        name: 'QTY',
+        isNumber: true,
+        allSelected:true,
+        filteredItems : []
     },
     value: {
-        comment: 'AED',
-        isNumber: true
+        name: 'AED',
+        isNumber: true,
+        allSelected:true,
+        filteredItems : []
     },
     storeCode: {
-        comment: 'Store Code'
+        name: 'Store Code',
+        allSelected:true,
+        filteredItems : []
     },
     storeName: {
-        comment: 'Store Name'
+        name: 'Store Name',
+        allSelected:true,
+        filteredItems : []
     },
     store: {
-        comment: 'Store Type'
+        name: 'Store Type',
+        allSelected:true,
+        filteredItems : []
     },
     location: {
-        comment: 'Store Location'
+        name: 'Store Location',
+        allSelected:true,
+        filteredItems : []
     },
     city: {
-        comment: 'Store City'
+        name: 'Store City',
+        allSelected:true,
+        filteredItems : []
     },
     groupCode: {
-        comment: 'Material Group Code'
+        name: 'Material Group Code',
+        allSelected:true,
+        filteredItems : []
     },
     groupName: {
-        comment: 'Material Group Name'
+        name: 'Material Group Name',
+        allSelected:true,
+        filteredItems : []
     },
     brand: {
-        comment: 'Material Brand'
+        name: 'Material Brand',
+        allSelected:true,
+        filteredItems : []
     },
     code: {
-        comment: 'Material Code'
+        name: 'Material Code',
+        allSelected:true,
+        filteredItems : []
     },
     name: {
-        comment: 'Material Name'
+        name: 'Material Name',
+        allSelected:true,
+        filteredItems : []
     },
     category: {
-        comment: 'Material Category'
+        name: 'Material Category',
+        allSelected:true,
+        filteredItems : []
     },
     date: {
-        comment: 'Date',
+        name: 'Date',
+        allSelected:true,
+        filteredItems : []
     },
 };
 
 const dimensions = Object.keys(SalesSchema).map((key: string) => {
-    return {id: key, name: SalesSchema[key].comment, isNumber: SalesSchema[key].isNumber}
+    const item = SalesSchema[key];
+    return {id: key, ...item}
 })
 
 // const dimensions = [
@@ -251,7 +280,7 @@ export default function App() {
     </AppContext.Provider>
 }
 
-function debounce(func: Function, timeout = 300) {
+export function debounce(func: Function, timeout = 300) {
     let timer: any = 0;
     return (...args: any) => {
         clearTimeout(timer);

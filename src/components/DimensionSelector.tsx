@@ -6,7 +6,6 @@ import Horizontal from "../layout/Horizontal";
 import {Observer} from "../observer/useObserver";
 import {CellComponentStyledProps} from "../grid/Sheet";
 import {IoFilterOutline} from "react-icons/io5";
-import {FilterSelector} from "./FilterSelector";
 
 const DimensionSelectorContext = createContext<any>({});
 
@@ -61,6 +60,7 @@ function setupAction(props: {
             $fieldsGridData,
             $focusedItem
         } = props;
+
         const isInFields = $fieldsGridData.current.indexOf($focusedItem.current) >= 0;
         const isInFilters = $filtersGridData.current.indexOf($focusedItem.current) >= 0;
         const isInRows = $rowsGridData.current.indexOf($focusedItem.current) >= 0;
@@ -270,8 +270,6 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
     const [$rowsGridData, setRowsGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.rows);
     const [$valuesGridData, setValuesGridData] = useObserver<any>(dimensionSelectorProps.initialDimension.values);
 
-    const [$displayFilterSelector, setDisplayFilterSelector] = useObserver(false);
-
     useObserverListener([$filtersGridData], () => {
         localStorage.setItem('filters', JSON.stringify($filtersGridData.current));
     });
@@ -284,7 +282,6 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
     useObserverListener([$valuesGridData], () => {
         localStorage.setItem('values', JSON.stringify($valuesGridData.current));
     });
-
     const [$focusedItem, setFocusedItem] = useObserver<any>(undefined);
     const [$toolBarAction, setToolBarAction] = useObserver<any>([]);
     useObserverListener([$focusedItem, $fieldsGridData, $filtersGridData, $rowsGridData, $columnsGridData, $valuesGridData], setupAction({
@@ -303,11 +300,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         setToolBarAction
     }));
 
-    function onFilterClicked(item: any) {
-        setDisplayFilterSelector(true)
-    }
-
-    return <DimensionSelectorContext.Provider value={{onFilterClicked}}><Vertical
+    return <DimensionSelectorContext.Provider value={{}}><Vertical
         onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -330,11 +323,9 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                     {title: 'Choose fields to add to report', field: 'name',hAlign:'left', width: '100%'}
                 ]} data={$fieldsGridData.current} rowResizerHidden={true}
                              defaultHeaderRowHeight={30}
-
                              focusedDataItem={$focusedItem.current}
                              filterHidden={true}
                              onFocusedDataItemChange={(newItem) => setFocusedItem(newItem)}
-
                 />
             }}/>
         </Vertical>
@@ -406,8 +397,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 })}
             </Horizontal>
         }}/>
-        <FilterSelector $displayFilterSelector={$displayFilterSelector}
-                        setDisplayFilterSelector={setDisplayFilterSelector} $selectedItem={$focusedItem}/>
+
     </Vertical>
     </DimensionSelectorContext.Provider>
 
