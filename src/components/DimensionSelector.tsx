@@ -439,6 +439,14 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                                 });
                             }
                             setFocusedItem(selectedItem);
+                            if (dimensionSelectorProps.onDimensionChanged) {
+                                dimensionSelectorProps.onDimensionChanged({
+                                    columns: $columnsGridData.current,
+                                    rows: $rowsGridData.current,
+                                    filters: $filtersGridData.current,
+                                    values: $valuesGridData.current
+                                });
+                            }
                         }}
 
         />

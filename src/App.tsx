@@ -123,7 +123,7 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
         return;
     }
 
-    let [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + props.columns.map((col: any) => col.id).join('_')), fetchData('distinct/' + props.rows.map((row: any) => row.id).join('_'))]);
+    let [columnsData, rowsData] = await Promise.all([fetchData('distinct/' + props.columns.map((col: Dimension) => col.id).join('_')), fetchData('distinct/' + props.rows.map((row: Dimension) => row.id).join('_'))]);
 
     rowsData = rowsData.map((row: any) => {
         const [key] = Object.keys(row);
@@ -134,7 +134,19 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
             out[key] = values[index];
             return out;
         }, {});
-    })
+    });
+    rowsData = rowsData.filter((rowData:any) => {
+        return props.rows.reduce((acc:boolean,row:Dimension) => {
+            if(row.allSelected){
+                return acc && true;
+            }
+            const fieldValue = rowData[row.id];
+            return acc && row.filteredItems.includes(fieldValue);
+        },true);
+    });
+    if(rowsData.length === 0){
+        return;
+    }
     const cols = Object.keys(rowsData[0]).map(key => {
         const column: GridColumn = {
             width: 100,
@@ -147,6 +159,7 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
         return column;
     });
     const colsLength = cols.length;
+
     const gridColumnsData: Array<GridColumn | GridColumnGroup> = columnsData.reduce((acc: Array<GridColumn | GridColumnGroup>, colData: any) => {
         const colKey: string = Object.keys(colData)[0];
         const colVal: string = colData[colKey];
