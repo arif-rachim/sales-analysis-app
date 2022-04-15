@@ -99,7 +99,7 @@ const dimensions: Array<Dimension> = Object.keys(SalesSchema).map((key: string) 
 })
 
 
-function loadDimension(dimensionName: string) {
+function loadDimension(dimensionName: string): Array<Dimension> {
     const dimension = localStorage.getItem(dimensionName);
     if (dimension) {
         return JSON.parse(dimension);
@@ -107,7 +107,7 @@ function loadDimension(dimensionName: string) {
     return []
 }
 
-async function renderGrid(props: { columns: any; rows: any; values: any; setPinnedLeftColumnIndex: any; setGridColumns: any; setGridRows: any }) {
+async function renderGrid(props: { filters: Array<Dimension>, columns: Array<Dimension>; rows: Array<Dimension>; values: Array<Dimension>; setPinnedLeftColumnIndex: any; setGridColumns: any; setGridRows: any }) {
     const column = props.columns[0];
     if (column === undefined) {
         return;
@@ -208,12 +208,11 @@ async function renderGrid(props: { columns: any; rows: any; values: any; setPinn
                         hAlign: 'center',
                         field: colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id,
                         width: 100,
+                        payload: {
+                            filters: props.filters
+                        },
                         cellComponent: FetchDataCellComponent
                     };
-                    // column.field = colVal + FIELD_SEPARATOR + colKey + FIELD_SEPARATOR + value.id;
-                    // column.title = value.name;
-                    // column.width = 50;
-                    // column.cellComponent = FetchDataCellComponent
                     return column;
                 });
 
@@ -257,16 +256,10 @@ export default function App() {
         return {filters, columns, rows, values, dimensions: dim}
     });
 
-    const {rows, columns, values} = initialDimension;
+    const {rows, columns, values, filters} = initialDimension;
     useEffect(() => {
-        renderGrid({columns, rows, values, setPinnedLeftColumnIndex, setGridColumns, setGridRows}).then();
-        //(async () => {
-        // here we need to fetch dimension
-        // const result = await fetch('http://localhost:3001/v1/dimension');
-        // const data = await result.json();
-        // console.log('We have data', data);
-        //})();
-    }, [rows, columns, values, setPinnedLeftColumnIndex, setGridColumns, setGridRows]);
+        renderGrid({filters, columns, rows, values, setPinnedLeftColumnIndex, setGridColumns, setGridRows}).then();
+    }, [rows, columns, values, filters, setPinnedLeftColumnIndex, setGridColumns, setGridRows]);
     const fetchData = useFetchPostData();
 
     return <AppContext.Provider value={useMemo(() => ({fetchData}), [fetchData])}>
@@ -291,8 +284,9 @@ export default function App() {
             </Horizontal>
             <DimensionSelector $displayDimensionSelector={$displayDimensionSelector}
                                onDimensionChanged={async (props) => {
-                                   const {rows, columns, values} = props;
+                                   const {rows, columns, values, filters} = props;
                                    await renderGrid({
+                                       filters,
                                        columns,
                                        rows,
                                        values,
@@ -387,7 +381,7 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
     const {fetchData} = useContext(AppContext);
     const [colValFiltersString, colKeyFiltersString, valueType] = props.column.field.split(FIELD_SEPARATOR);
     const dataItemString = JSON.stringify(props.dataItem);
-
+    const {filters: onlyContains} = props.column.payload;
     const [$value, setValue] = useObserver<any>('loading');
     useEffect(() => {
         const dataItem = JSON.parse(dataItemString);
@@ -395,20 +389,24 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
         const colValFilters = colValFiltersString.split('#');
         const rowKeyFilters = Object.keys(dataItem);
         const rowValFilters = rowKeyFilters.map(key => dataItem[key]);
+        const ocs = onlyContains.filter((oc: Dimension) => !oc.allSelected && oc.filteredItems.length > 0).reduce((acc: any, oc: Dimension) => {
+            acc[oc.id] = oc.filteredItems;
+            return acc;
+        }, {});
         const filters = [...colKeyFilters, ...rowKeyFilters];
         const values = [...colValFilters, ...rowValFilters];
 
         (async () => {
             setValue('loading');
             try {
-                const result = await fetchData(valueType, {filters, values});
+                const result = await fetchData(valueType, {filters, values, onlyContain: ocs});
                 const value = parseInt(result || '0');
                 setValue(value);
             } catch (err) {
                 console.log(err);
             }
         })();
-    }, [colKeyFiltersString, colValFiltersString, dataItemString, fetchData, setValue, valueType])
+    }, [colKeyFiltersString, onlyContains, colValFiltersString, dataItemString, fetchData, setValue, valueType])
 
     return <Vertical vAlign={'center'} style={{height: '100%'}}>
         <ObserverValue observers={$value} render={() => {

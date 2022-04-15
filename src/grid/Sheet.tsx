@@ -62,7 +62,8 @@ export interface Column {
     cellComponent?: React.FC<CellComponentStyledProps>,
     cellStyleFunction?: (props: CellStyleFunctionProperties) => CSSProperties,
     dataItemToValue?: (props: DataItemToValueProps) => string,
-    cellSpanFunction?: (props: CellSpanFunctionProps) => CellSpanFunctionResult
+    cellSpanFunction?: (props: CellSpanFunctionProps) => CellSpanFunctionResult,
+    payload?: any
 }
 
 
