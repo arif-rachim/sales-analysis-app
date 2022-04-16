@@ -1,15 +1,4 @@
 const {Sequelize, Model, DataTypes} = require('sequelize');
-/*
-const path = require('path');
-const sequelize = new Sequelize(`sqlite:${path.join('./output', 'sales.db')}`,{
-    pool: {
-        max: 100,
-        min: 100,
-        acquire: 30000,
-        idle: 10000
-    }
-});
-*/
 const sequelize = new Sequelize('postgres://postgres:arifrachim@localhost:5432/sales', {
     pool: {
         max: 10,
@@ -113,6 +102,22 @@ const SalesSchema = {
         type: DataTypes.DOUBLE,
         comment: 'Value',
         isQuantifiable: true
+    },
+    year : {
+        type: DataTypes.INTEGER,
+        comment: 'Year',
+    },
+    month : {
+        type: DataTypes.INTEGER,
+        comment: 'Month',
+    },
+    price : {
+        type: DataTypes.DOUBLE,
+        comment: 'Price',
+    },
+    elasticity : {
+        type: DataTypes.DOUBLE,
+        comment: 'Elasticity',
     }
 };
 Sales.init(SalesSchema, {

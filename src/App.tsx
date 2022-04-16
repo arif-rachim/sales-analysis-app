@@ -9,6 +9,7 @@ import {generateUniqueID} from "web-vitals/dist/modules/lib/generateUniqueID";
 import {DimensionSelector} from "./components/DimensionSelector";
 import {PivotGrid} from "./components/PivotGrid";
 import {IoSettingsOutline} from "react-icons/io5";
+import {DataTypes} from "sequelize";
 
 const FIELD_SEPARATOR: string = '⚮';
 
@@ -85,6 +86,26 @@ const SalesSchema: any = {
         allSelected: true,
         filteredItems: []
     },
+    year : {
+        name: 'Year',
+        allSelected: true,
+        filteredItems: []
+    },
+    month : {
+        name: 'Month',
+        allSelected: true,
+        filteredItems: []
+    },
+    price : {
+        name: 'Price',
+        allSelected: true,
+        filteredItems: []
+    },
+    elasticity : {
+        name: 'Elasticity',
+        allSelected: true,
+        filteredItems: []
+    }
 };
 
 export interface Dimension {
