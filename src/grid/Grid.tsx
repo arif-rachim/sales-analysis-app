@@ -39,7 +39,11 @@ export interface GridProps {
     sortableHidden?: boolean,
     defaultHeaderRowHeight?: number,
     debugMode?: boolean
-    headerRowHeightCallback?: CalculateLengthCallback
+    headerRowHeightCallback?: CalculateLengthCallback,
+    customRowHeight?: Map<number, number>,
+    customColWidth?: Map<number, number>,
+    onCustomColWidthChange?:(customColWidth:Map<number,number>) => void,
+    onCustomRowHeightChange?:(customRowHeight:Map<number,number>) => void
 }
 
 export interface GridColumn extends Column {
@@ -464,7 +468,11 @@ export function Grid(gridProps: GridProps) {
         rowResizerHidden,
         defaultHeaderRowHeight,
         debugMode,
-        headerRowHeightCallback
+        headerRowHeightCallback,
+        customRowHeight,
+        customColWidth,
+        onCustomColWidthChange,
+        onCustomRowHeightChange
     } = gridProps;
 
     const defaultRowHeight = _defaultRowHeight || DEFAULT_HEIGHT;
@@ -473,8 +481,22 @@ export function Grid(gridProps: GridProps) {
 
     const [$data, setData] = useObserver(dataProp);
     const [$viewPortDimension, setViewPortDimension] = useObserver({width: 0, height: 0});
-    const [$customColWidth, setCustomColWidth] = useObserver(new Map<number, number>());
-    const [$customRowHeight, setCustomRowHeight] = useObserver(new Map<number, number>());
+    const [$customColWidth, setCustomColWidth] = useObserver(customColWidth || new Map<number, number>());
+    const [$customRowHeight, setCustomRowHeight] = useObserver(customRowHeight || new Map<number, number>());
+
+    useObserverListener($customColWidth,() => {
+        const changeCallback = onCustomColWidthChange || (() => {});
+        if($customColWidth.current.size > 0){
+            changeCallback($customColWidth.current);
+        }
+    });
+    useObserverListener($customRowHeight,() => {
+        const changeCallback = onCustomRowHeightChange || (() => {});
+        if($customRowHeight.current.size > 0){
+            changeCallback($customRowHeight.current);
+        }
+
+    });
     const [$gridFilter, setGridFilter] = useObserver(new Map<string, any>());
     const [$gridSort, setGridSort] = useObserver<Array<GridSortItem>>([]);
     const [$focusedDataItem, setFocusedDataItem] = useObserver(focusedDataItem);
@@ -499,17 +521,23 @@ export function Grid(gridProps: GridProps) {
     useEffect(() => setFocusedDataItem(focusedDataItem), [focusedDataItem, setFocusedDataItem]);
     useObserverListener([$viewPortDimension, $columns], () => {
         if ($viewPortDimension.current.width > 0) {
+            const propsCustomColWidth = gridProps.customColWidth || new Map<number, number>();
+
+
             const columnsWidth = new Map<number, number>();
             const columnsWidthPercentage = new Map<number, number>();
             let totalColumnsWidth = 0;
             let totalPercentage = 0;
             const viewPortWidth = $viewPortDimension.current.width - SCROLLER_WIDTH;
             $columns.current.forEach((column, columnIndex) => {
-                if (typeof column.width === 'number') {
+                if(propsCustomColWidth.has(columnIndex)){
+                    const width = propsCustomColWidth.get(columnIndex) || 0
+                    totalColumnsWidth += width;
+                    columnsWidth.set(columnIndex, width);
+                }else if (typeof column.width === 'number') {
                     totalColumnsWidth += column.width;
                     columnsWidth.set(columnIndex, column.width);
-                }
-                if (typeof column.width === 'string' && column.width.endsWith('%')) {
+                }else if (typeof column.width === 'string' && column.width.endsWith('%')) {
                     const widthInPercentage = parseInt(column.width.replace('%', ''));
                     columnsWidthPercentage.set(columnIndex, widthInPercentage);
                     totalPercentage += widthInPercentage;
