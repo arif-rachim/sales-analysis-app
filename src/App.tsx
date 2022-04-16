@@ -9,7 +9,6 @@ import {generateUniqueID} from "web-vitals/dist/modules/lib/generateUniqueID";
 import {DimensionSelector} from "./components/DimensionSelector";
 import {PivotGrid} from "./components/PivotGrid";
 import {IoSettingsOutline} from "react-icons/io5";
-import {DataTypes} from "sequelize";
 
 const FIELD_SEPARATOR: string = '⚮';
 
@@ -219,11 +218,10 @@ async function renderGrid(props: { filters: Array<Dimension>, columns: Array<Dim
             if (isNotLastIndex) {
                 const group: GridColumnGroup = child;
                 group.columns = [];
-                group.title = title;
-
+                group.title = mapTitle(key,title);
             } else {
                 const group: GridColumnGroup = child;
-                group.title = title;
+                group.title = mapTitle(key,title);
                 group.columns = props.values.map((value: any) => {
                     const column: GridColumn = {
                         title: value.name,
@@ -437,4 +435,11 @@ function FetchDataCellComponent(props: CellComponentStyledProps) {
                 }}>{$value.current === 'loading' ? 'Loading...' : numberFormat.format($value.current)}</Vertical>
         }}/>
     </Vertical>
+}
+const month = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function mapTitle(key:string,title:string){
+    if(key === 'month'){
+        return month[parseInt(title) - 1];
+    }
+    return title;
 }

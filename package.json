@@ -24,7 +24,7 @@
     "xlsx": "^0.18.4"
   },
   "scripts": {
-    "datasource:import": "node import-datasource.js",
+    "datasource:import": "node --max-old-space-size=4096 import-datasource.js",
     "start:server": "node server",
     "start:client": "react-scripts start",
     "build:client": "react-scripts build",

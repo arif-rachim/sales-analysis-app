@@ -45,7 +45,6 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                     const materialBrandNameColIndex = 2;
                     const materialCodeColIndex = 3;
                     const materialNameColIndex = 4;
-                    const materialEanUpcColIndex = 5;
                     const startingColumnIndex = 7;
 
                     const storeCodeRowIndex = 1;
@@ -59,7 +58,14 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                     const months = dataRows[monthCodeRowIndex];
                     const qtyOrValue = dataRows[qtyOrValueRowIndex];
 
-                    dataRows.filter((row, rowIndex) => rowIndex > 6 && row[materialEanUpcColIndex].length > 1).forEach(row => {
+                    dataRows.filter((row) => {
+                        try{
+                            const materialCode = parseInt((row[materialCodeColIndex] || '').toString());
+                            return materialCode > 0;
+                        }catch(err){
+                            return false;
+                        }
+                    }).forEach(row => {
                         for (let colIndex = startingColumnIndex; colIndex < row.length; colIndex++) {
                             const isQuantity = qtyOrValue[colIndex].toUpperCase().indexOf('QTY') >= 0;
                             if (!isQuantity) {
@@ -75,7 +81,9 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                             const stNames = storeName.split(',')
                             const dt = months[colIndex].split('.');
                             const groupCode = row[materialGroupCodeColIndex];
-
+                            const quantity = parseInt(row[colIndex].toString() || '0');
+                            const value = parseFloat((row[storeCodes.findIndex((value, index) => value === storeCodes[colIndex] && index > colIndex)]).toString() || '0' );
+                            const price = (quantity > 0 && value > 0 ? (value / quantity) : 0).toPrecision(3)
                             const data = {
                                 groupCode: trimToUpperCase(groupCode),
                                 groupName: trimToUpperCase(row[materialGroupNameColIndex]),
@@ -89,8 +97,12 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                                 location: trimToUpperCase(stNames[1]),
                                 city: trimToUpperCase(storeCodeCity.get(parseInt(storeCode))),
                                 date: new Date(`${dt[1]}-${dt[0]}-01`),
-                                quantity: parseInt(row[colIndex].toString() || '0'),
-                                value: parseFloat((row[storeCodes.findIndex((value, index) => value === storeCodes[colIndex] && index > colIndex)]).toString() || '0' )
+                                month : dt[0],
+                                year : dt[1],
+                                quantity,
+                                value,
+                                price,
+                                elasticity:0
                             }
                             sales.push(data);
                         }

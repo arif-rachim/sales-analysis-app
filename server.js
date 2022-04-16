@@ -5,14 +5,13 @@ const fastify = require('fastify')({ logger: true });
 fastify.register(require('fastify-cors'), {
     origin :true
 })
-const pageSize = 50;
 
 // Declare a route
-fastify.get('/', async (request, reply) => {
+fastify.get('/', async () => {
     return { hello: 'world' }
 })
 
-fastify.post('/v1/compoundRequest',async (req,res) => {
+fastify.post('/v1/compoundRequest',async (req) => {
     const compoundQuery = req.body.map(({id,method,body},index) => {
             const {filters,values,onlyContains} = body;
             const whereString = filters.map((key,index) => {
@@ -22,8 +21,7 @@ fastify.post('/v1/compoundRequest',async (req,res) => {
                 const val = onlyContains[key].map(key => `'${key}'`);
                 return `"${key}" in (${val.join(',')})`
             }).join(' and ');
-            const query = `(select sum(${method}) as "${id}" from sales where ${whereString} ${onlyContainsString.length > 0 ? `and ${onlyContainsString}`:''}) as "${index}"`;
-            return query;
+            return `(select sum(${method}) as "${id}" from sales where ${whereString} ${onlyContainsString.length > 0 ? `and ${onlyContainsString}`:''}) as "${index}"`;
     });
     const sqlQuery = `select * from ${compoundQuery.join(' , ')}`;
     const [[data]] = await sequelize.query(sqlQuery);
@@ -32,21 +30,6 @@ fastify.post('/v1/compoundRequest',async (req,res) => {
     })
 })
 
-async function loadPaginatedQuery(query, page) {
-    page = parseInt(page);
-    const countQuery = `select count(*) total from (${query})`;
-    const [[{total:totalRow}]] = await sequelize.query(countQuery);
-    const paginatedQuery = `${query} limit ${(page - 1) * pageSize},${pageSize}`;
-    const [data] = await sequelize.query(paginatedQuery);
-    const totalPage = Math.ceil(totalRow / pageSize);
-    return {page, pageSize, totalPage, data};
-}
-
-fastify.get('/v1/sales/stores/:page',async (req) => {
-    const query = "SELECT DISTINCT(sales.storeName),storeCode,city from sales where city not NULL order by storeCode ASC";
-    const {page} = req.params;
-    return await loadPaginatedQuery(query, page);
-});
 
 fastify.get('/v1/dimension',async () => {
     return Object.keys(SalesSchema).filter(key => key !== 'id').map(key => {
@@ -60,16 +43,6 @@ fastify.get('/v1/distinct/:columnName',async (req) => {
     const query = `select DISTINCT(${columnName.split('_').map(key => `"${key}"`).join("||'#'||")}) as column from sales order by "column" asc`;
     const [data] = await sequelize.query(query,{logging:false});
     return data.map(d => ({[columnName]:d.column}));
-});
-
-fastify.get('/v1/quantity',async (req) => {
-    const query = req.query;
-    const whereString = Object.keys(query).map(key => {
-        return `"${key}" = '${query[key]}'`
-    }).join(' and ');
-    const sqlQuery = `select sum(value) as value from sales where ${whereString} `;
-    const [data] = await sequelize.query(sqlQuery);
-    return data;
 });
 
 // Run the server!
