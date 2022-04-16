@@ -185,8 +185,12 @@ async function renderGrid(props: { filters: Array<Dimension>, columns: Array<Dim
         // we filter first
         const colKey: string = Object.keys(colData)[0];
         const colVal: string = colData[colKey];
+        if(colVal === null){
+            return false;
+        }
         const keys: Array<string> = colKey.split('_');
-        const values: Array<string> = colVal.split('#');
+        let values:Array<string> = colVal.toString().split('#');
+
         const data = keys.reduce((acc: any, key: string, index: number) => {
             acc[key] = values[index];
             return acc;
@@ -203,7 +207,7 @@ async function renderGrid(props: { filters: Array<Dimension>, columns: Array<Dim
         const colKey: string = Object.keys(colData)[0];
         const colVal: string = colData[colKey];
         const keys: Array<string> = colKey.split('_');
-        const values: Array<string> = colVal.split('#');
+        const values: Array<string> = colVal.toString().split('#');
 
         const lastIndexKey = keys.length;
         keys.reduce((acc: Array<GridColumn | GridColumnGroup>, key: string, index: number) => {

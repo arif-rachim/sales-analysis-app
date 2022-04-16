@@ -8,6 +8,7 @@ import {CellComponentStyledProps} from "../grid/Sheet";
 import {IoFilterOutline} from "react-icons/io5";
 import FilterSelector from "./FilterSelector";
 import {Dimension} from "../App";
+import {AiOutlineInsertRowAbove, AiOutlineInsertRowLeft} from "react-icons/ai";
 
 const DimensionSelectorContext = createContext<any>({});
 
@@ -23,7 +24,7 @@ function ItemCellComponent(props: CellComponentStyledProps) {
         <Vertical style={{flexGrow: 1}}>
             {props.value}
         </Vertical>
-        <Vertical style={{fontSize: 26, padding: '0px 10px', borderLeft: '1px solid #ddd'}}
+        <Vertical style={{fontSize: 16, padding: '0px 3px', borderLeft: '1px solid #ddd'}}
                   onClick={() => dimensionContext.onFilterClicked(props.dataItem)}>
             <IoFilterOutline/>
         </Vertical>
@@ -117,11 +118,11 @@ function setupAction(props: {
 
         const fieldsGridAction = [
             {
-                title: 'Add to Rows',
+                title: <AiOutlineInsertRowLeft/>,
                 onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setRowsGridData})
             },
             {
-                title: 'Add to Columns',
+                title: <AiOutlineInsertRowAbove/>,
                 onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setColumnsGridData})
             },
             {
@@ -155,7 +156,7 @@ function setupAction(props: {
 
         const valuesGridActionForNumberItem = [
             {
-                title: 'Remove from Values',
+                title: <AiOutlineInsertRowLeft/>,
                 onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setFieldsGridData})
             },
             {
@@ -170,11 +171,11 @@ function setupAction(props: {
 
         const filtersGridAction = [
             {
-                title: 'Move to Rows',
+                title: <AiOutlineInsertRowLeft/>,
                 onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setRowsGridData})
             },
             {
-                title: 'Move to Columns',
+                title: <AiOutlineInsertRowAbove/>,
                 onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setColumnsGridData})
             },
             {
@@ -192,11 +193,11 @@ function setupAction(props: {
         ];
         const columnGridAction = [
             {
-                title: 'Move to Rows',
+                title: <AiOutlineInsertRowLeft/>,
                 onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setRowsGridData})
             },
             {
-                title: 'Remove Column',
+                title: <AiOutlineInsertRowAbove/>,
                 onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setFieldsGridData})
             },
             {
@@ -214,11 +215,11 @@ function setupAction(props: {
         ];
         const rowGridAction = [
             {
-                title: 'Remove Row',
+                title: <AiOutlineInsertRowLeft/>,
                 onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setFieldsGridData})
             },
             {
-                title: 'Move to Columns',
+                title: <AiOutlineInsertRowAbove/>,
                 onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setColumnsGridData})
             },
             {
@@ -324,23 +325,25 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             event.stopPropagation();
         }}
         style={{
-            bottom: display ? 0 : '-85%',
-            height: '80%',
+            bottom: display ? 0 : -500,
+            height: 500,
+            right: 0,
             position: 'absolute',
-            width: '100%',
+            width: 300,
             transition: 'bottom 300ms ease-in-out',
             backgroundColor: '#fff',
             padding: '0rem',
             zIndex: 99,
             boxShadow: '0px 0px 20px -2px #666'
-        }}>
+        }} >
 
         <Vertical style={{height: '33.33%'}}>
             <ObserverValue observers={[$fieldsGridData, $focusedItem]} render={() => {
-                return <Grid defaultRowHeight={40} columns={[
-                    {title: 'Choose fields to add to report', field: 'name', hAlign: 'left', width: '100%'}
+                return <Grid defaultRowHeight={25} columns={[
+                    {title: 'Dimensions', field: 'name', hAlign: 'left', width: '100%'}
                 ]} data={$fieldsGridData.current} rowResizerHidden={true}
                              defaultHeaderRowHeight={30}
+
                              focusedDataItem={$focusedItem.current}
                              filterHidden={true}
                              onFocusedDataItemChange={(newItem) => setFocusedItem(newItem)}
@@ -350,7 +353,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         <Horizontal style={{height: '33.33%', overflow: 'auto', borderTop: '1px solid #999'}}>
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$filtersGridData, $focusedItem]} render={() => {
-                    return <Grid defaultRowHeight={40} columns={[
+                    return <Grid defaultRowHeight={25} columns={[
                         {
                             title: 'Filters',
                             field: 'name',
@@ -368,7 +371,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             </Vertical>
             <Vertical style={{width: '50%'}}>
                 <ObserverValue observers={[$columnsGridData, $focusedItem]} render={() => {
-                    return <Grid defaultRowHeight={40} columns={[
+                    return <Grid defaultRowHeight={25} columns={[
                         {
                             title: 'Columns',
                             field: 'name',
@@ -388,7 +391,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         <Horizontal style={{height: '33.33%', overflow: 'auto', borderTop: '1px solid #999'}}>
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$rowsGridData, $focusedItem]} render={() => {
-                    return <Grid defaultRowHeight={40} columns={[
+                    return <Grid defaultRowHeight={25} columns={[
                         {title: 'Rows', field: 'name', width: '100%', hAlign: 'left', cellComponent: ItemCellComponent}
                     ]} data={$rowsGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
@@ -400,7 +403,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             </Vertical>
             <Vertical style={{width: '50%'}}>
                 <ObserverValue observers={[$valuesGridData, $focusedItem]} render={() => {
-                    return <Grid defaultRowHeight={40} columns={[
+                    return <Grid defaultRowHeight={25} columns={[
                         {title: 'Values', field: 'name', width: '100%', hAlign: 'left'}
                     ]} data={$valuesGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
@@ -415,13 +418,13 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             const toolBarActions = $toolBarAction.current;
             const width = Math.round((100 / toolBarActions.length));
             return <Horizontal style={{borderTop: '1px solid #CCC'}}>
-                {toolBarActions.map((ta: any) => {
+                {toolBarActions.map((ta: any,index:number) => {
                     return <Vertical hAlign={'center'} style={{
                         width: `${width}%`,
                         padding: '1rem',
                         backgroundColor: '#fff',
                         borderRight: '1px solid #ccc'
-                    }} key={ta.title} onClick={() => ta.onAction()}>
+                    }} key={index} onClick={() => ta.onAction()}>
                         {ta.title}
                     </Vertical>
                 })}

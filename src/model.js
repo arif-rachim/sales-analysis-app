@@ -104,11 +104,11 @@ const SalesSchema = {
         isQuantifiable: true
     },
     year : {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         comment: 'Year',
     },
     month : {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         comment: 'Month',
     },
     price : {
@@ -129,6 +129,10 @@ Sales.init(SalesSchema, {
         {
             name: 'storeName_location_city_brand',
             fields: ['storeName', 'location', 'city', 'brand']
+        },
+        {
+            name: 'category_brand_name_year_month_city',
+            fields: ['category', 'brand', 'name', 'year','month','city']
         }
     ]
 });

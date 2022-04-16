@@ -38,7 +38,6 @@ export interface GridProps {
     filterHidden?: boolean,
     sortableHidden?: boolean,
     defaultHeaderRowHeight?: number,
-    debugMode?: boolean
     headerRowHeightCallback?: CalculateLengthCallback,
     customRowHeight?: Map<number, number>,
     customColWidth?: Map<number, number>,
@@ -467,7 +466,6 @@ export function Grid(gridProps: GridProps) {
         pinnedLeftColumnIndex,
         rowResizerHidden,
         defaultHeaderRowHeight,
-        debugMode,
         headerRowHeightCallback,
         customRowHeight,
         customColWidth,
@@ -582,9 +580,7 @@ export function Grid(gridProps: GridProps) {
             cellSpanFunction: defaultCellSpanFunction,
         }))
     });
-    if (debugMode) {
-        console.log('Columns Header column updated', columnsHeaderColumn, 'here we have header data', headerData);
-    }
+
 
     const gridContextRef = useRef({
         props: gridProps,
@@ -677,7 +673,6 @@ export function Grid(gridProps: GridProps) {
                                defaultRowHeight={defaultHeaderRowHeight || HEADER_HEIGHT}
                                defaultColWidth={defaultColWidth}
                                hideLeftColumnIndex={hideLeftColumnIndex}
-                               debugMode={debugMode}
                                sheetHeightFollowsTotalRowsHeight={true}
                                rowHeightCallback={headerRowHeightCallback}
                         />

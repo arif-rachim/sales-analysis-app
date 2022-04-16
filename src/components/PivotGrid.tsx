@@ -25,7 +25,6 @@ export function PivotGrid(props: PivotGridProps) {
         const item = localStorage.getItem('customColWidth');
         if(item){
             const map = new Map<number,number>(JSON.parse(item,reviver));
-            console.log(map);
             return map;
         }
         return new Map<number,number>();
@@ -44,7 +43,6 @@ export function PivotGrid(props: PivotGridProps) {
     },[]);
     return <Vertical style={{height: '100%', fontSize: 11}}>
         <Grid columns={columns} data={rows}
-              debugMode={true}
               filterHidden={true}
               sortableHidden={true}
               pinnedLeftColumnIndex={$pinnedLeftColumnIndex.current}

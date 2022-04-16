@@ -71,6 +71,7 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                             if (!isQuantity) {
                                 continue;
                             }
+                            debugger;
                             const storeCode = storeCodes[colIndex];
                             const storeName = storeCodeName.get(parseInt(storeCode));
                             if (storeName === undefined) {
@@ -82,7 +83,9 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                             const dt = months[colIndex].split('.');
                             const groupCode = row[materialGroupCodeColIndex];
                             const quantity = parseInt(row[colIndex].toString() || '0');
+
                             const value = parseFloat((row[storeCodes.findIndex((value, index) => value === storeCodes[colIndex] && index > colIndex)]).toString() || '0' );
+
                             const price = (quantity > 0 && value > 0 ? (value / quantity) : 0).toPrecision(3)
                             const data = {
                                 groupCode: trimToUpperCase(groupCode),

@@ -83,8 +83,7 @@ export interface SheetProperties<DataItem> {
     onCellDoubleClicked?: CellClickedCallback,
     onCellDoubleClickedCapture?: CellClickedCallback,
     hideLeftColumnIndex: number,
-    $focusedDataItem?: Observer<any>
-    debugMode?: boolean,
+    $focusedDataItem?: Observer<any>,
     sheetHeightFollowsTotalRowsHeight?: boolean,
     rowHeightCallback?: CalculateLengthCallback,
     colWidthCallback?: CalculateLengthCallback
@@ -139,7 +138,6 @@ interface RenderComponentProps {
     scrollerTop: number,
     viewPortWidth: number,
     viewPortHeight: number,
-    debugMode?: boolean,
     colWidthCallback?: CalculateLengthCallback,
     rowHeightCallback?: CalculateLengthCallback
 }
@@ -180,7 +178,7 @@ const defaultLengthCallback: CalculateLengthCallback = props => props.length;
 export const Sheet = React.forwardRef(function Sheet<DataItem>(props: SheetProperties<DataItem>, ref: ForwardedRef<SheetRef>) {
     const propsRef = useRef(props);
     propsRef.current = props;
-    const {debugMode, sheetHeightFollowsTotalRowsHeight} = props;
+    const {sheetHeightFollowsTotalRowsHeight} = props;
     const sheetContextRef = useRef<SheetContextType>({props});
     sheetContextRef.current = {props};
     const [$reRender, setReRender] = useObserver(new Date());
@@ -193,9 +191,7 @@ export const Sheet = React.forwardRef(function Sheet<DataItem>(props: SheetPrope
     const [elements, setElements] = useState(new Array<ReactElement>());
     const forceUpdate = useCallback(() => setReRender(new Date()), [setReRender]);
     useEffect(forceUpdate, [props.data, props.columns, forceUpdate]);
-    if (debugMode) {
-        console.log('Rendering Sheet', props.data, props.columns);
-    }
+
     useImperativeHandle(ref, () => {
         function updateScrollerPosition(scrollerPosition: { top: number; left: number }) {
             viewPortRef.current.scrollLeft = scrollerPosition.left;
@@ -262,8 +258,7 @@ export const Sheet = React.forwardRef(function Sheet<DataItem>(props: SheetPrope
             viewPortHeight: sheetHeightFollowsTotalRowsHeight ? totalRowsHeight : $viewPortDimension.current.height,
             viewPortWidth: $viewPortDimension.current.width,
             colWidthCallback: propsRef.current.colWidthCallback,
-            rowHeightCallback: propsRef.current.rowHeightCallback,
-            debugMode
+            rowHeightCallback: propsRef.current.rowHeightCallback
         });
     });
 
@@ -541,7 +536,6 @@ function renderComponent({
                              scrollerTop,
                              viewPortWidth,
                              viewPortHeight,
-                             debugMode,
                              colWidthCallback,
                              rowHeightCallback
                          }: RenderComponentProps): void {
@@ -551,10 +545,7 @@ function renderComponent({
     const numberOfColInsideViewPort: CalculateInsideViewPort = calculateInsideViewPort(columns, numberOfColBeforeViewPort.index, customColWidth, defaultColWidth, viewPortWidth, scrollerLeft, numberOfColBeforeViewPort.totalLength, colWidthCallback);
     const numberOfRowBeforeViewPort: CalculateBeforeViewPort = calculateBeforeViewPort(data, customRowHeight, defaultRowHeight, scrollerTop, rowHeightCallback);
     const numberOfRowInsideViewPort: CalculateInsideViewPort = calculateInsideViewPort(data, numberOfRowBeforeViewPort.index, customRowHeight, defaultRowHeight, viewPortHeight, scrollerTop, numberOfRowBeforeViewPort.totalLength, rowHeightCallback);
-    if (debugMode) {
-        console.log('Viewport height', viewPortHeight);
-        console.log('Number of row inside viewport', numberOfColInsideViewPort);
-    }
+
 
     const heightsOfRowInsideViewPort = numberOfRowInsideViewPort.lengths;
     const totalHeightBeforeViewPort = numberOfRowBeforeViewPort.totalLength;
