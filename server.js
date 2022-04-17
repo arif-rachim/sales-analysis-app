@@ -1,6 +1,7 @@
 // Require the framework and instantiate it
 const {Sales, sequelize, SalesSchema} = require("./src/model");
-const fastify = require('fastify')({logger: true});
+const tableIndex = require('./tableIndex');
+const fastify = require('fastify')({logger: false});
 
 fastify.register(require('fastify-cors'), {
     origin: true
@@ -12,8 +13,15 @@ fastify.get('/', async () => {
 })
 
 fastify.post('/v1/compoundRequest', async (req) => {
+    console.time('[CompoundRequest]');
     const compoundQuery = req.body.map(({id, method, body}, index) => {
         const {filters, values, onlyContains} = body;
+        const queryFilters = [...filters,...Object.keys(onlyContains)];
+        const queryIndexName = queryFilters.join("_");
+        if(tableIndex.find(t => t.name === queryIndexName) === undefined){
+            console.log(`[Missing Index] {name:"${queryIndexName}",fields:[`+queryFilters.map(key => `"${key}"`).join(',')+']}');
+        }
+
         const whereString = filters.map((key, index) => {
             return `"${key}" = '${values[index].toString().split("'").join("''")}'`
         }).join(' and ');
@@ -24,12 +32,13 @@ fastify.post('/v1/compoundRequest', async (req) => {
         return `(select sum(${method}) as "${id}" from sales where ${whereString} ${onlyContainsString.length > 0 ? `and ${onlyContainsString}` : ''}) as "${index}"`;
     });
     const sqlQuery = `select * from ${compoundQuery.join(' , ')}`;
-    try{
+    console.timeEnd('[CompoundRequest]');
+    try {
         const [[data]] = await sequelize.query(sqlQuery);
         return Object.keys(data).map((key) => {
             return {value: data[key], id: key}
         })
-    }catch(err){
+    } catch (err) {
         debugger;
         throw err;
     }
@@ -44,10 +53,12 @@ fastify.get('/v1/dimension', async () => {
 });
 
 fastify.get('/v1/distinct/:columnName', async (req) => {
-
     const columnName = req.params.columnName;
+    const label = `[ColumnName] ${columnName} `
+    console.time(label);
     const query = `select DISTINCT(${columnName.split('_').map(key => `"${key}"`).join("||'#'||")}) as column from sales order by "column" asc`;
     const [data] = await sequelize.query(query, {logging: false});
+    console.timeEnd(label);
     return data.map(d => ({[columnName]: d.column}));
 });
 

@@ -1,4 +1,5 @@
 const {Sequelize, Model, DataTypes} = require('sequelize');
+const tableIndex = require('../tableIndex');
 const sequelize = new Sequelize('postgres://postgres:arifrachim@localhost:5432/sales', {
     pool: {
         max: 10,
@@ -121,28 +122,7 @@ const SalesSchema = {
     }
 };
 Sales.init(SalesSchema, {
-    sequelize, modelName: 'sales', indexes: [
-        {
-            name: 'city_storeName_category',
-            fields: ['city', 'storeName', 'category']
-        },
-        {
-            name: 'storeName_location_city_brand',
-            fields: ['storeName', 'location', 'city', 'brand']
-        },
-        {
-            name: 'category_brand_name_year_month_city',
-            fields: ['category', 'brand', 'name', 'year','month','city']
-        },
-        {
-            name : 'name',
-            fields :['name']
-        },
-        {
-            name : 'year',
-            fields : ['year']
-        }
-    ]
+    sequelize, modelName: 'sales', indexes: tableIndex
 });
 
 module.exports = {Sales, ImportedFile, sequelize, SalesSchema};

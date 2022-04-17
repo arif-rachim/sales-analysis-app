@@ -1,11 +1,13 @@
 import Vertical from "../layout/Vertical";
 import {emptyObserver, Observer, useObserver} from "../observer/useObserver";
-import {createContext, Dispatch, MutableRefObject, useContext, useEffect, useRef, useState} from "react";
+import React, {createContext, Dispatch, MutableRefObject, useContext, useEffect, useRef, useState} from "react";
 import {ObserverValue, useObserverListener, useObserverValue} from "../observer";
 import Horizontal from "../layout/Horizontal";
 import {Grid} from "../grid/Grid";
 import {Dimension, fetchData} from "../App";
 import {CellComponentStyledProps} from "../grid/Sheet";
+import {BiCube} from "react-icons/bi";
+import {AiFillDownCircle} from "react-icons/ai";
 
 interface LabelValue {
     id: string;
@@ -46,9 +48,6 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
                 backgroundColor: '#fff',
                 padding: '0rem',
             }}>
-            <Horizontal style={{padding: 5}} hAlign={'right'}>
-                <button onClick={() => setDisplayFilterSelector(false)}>Close</button>
-            </Horizontal>
             <ObserverValue observers={$gridData} render={() => {
                 return <Grid columns={[
                     {
@@ -59,7 +58,23 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
                         cellComponent: CheckboxCellComponent,
                         headerCellComponent: CheckboxHeaderCellComponent
                     },
-                    {title: 'Name', field: 'label', width: '100%', hAlign: 'left'}
+                    {
+                        title: <Horizontal style={{width: 440}}>
+                            <Vertical style={{fontSize: 16, marginRight: 10}}><BiCube/></Vertical>
+                            <Vertical style={{flexGrow: 1}}>
+                                {'Filter'}
+                            </Vertical>
+                            <Horizontal onClick={() => setDisplayFilterSelector(false)} style={{cursor:'pointer'}}>
+                                <Vertical style={{fontSize: 16, marginRight: 5}}
+                                          >
+                                    <AiFillDownCircle/>
+                                </Vertical>
+                                <Vertical>
+                                    {'Close'}
+                                </Vertical>
+                            </Horizontal>
+                        </Horizontal>, field: 'label', width: '100%', hAlign: 'left'
+                    }
                 ]} data={$gridData.current} rowResizerHidden={true}/>
             }}/>
 
@@ -104,7 +119,7 @@ function CheckboxCellComponent(props: CellComponentStyledProps) {
 
     useEffect(() => {
         setChecked($selectedItem.current.filteredItems.includes(props.dataItem.id));
-    },[$selectedItem, props.dataItem]);
+    }, [$selectedItem, props.dataItem]);
 
     useObserverListener($selectedItem, () => {
         setChecked($selectedItem.current.filteredItems.includes(props.dataItem.id));

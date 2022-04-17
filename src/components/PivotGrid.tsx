@@ -53,6 +53,7 @@ export function PivotGrid(props: PivotGridProps) {
               customColWidth={customColWidth}
               onCustomColWidthChange={handler.onCustomColWidthChange}
               onCustomRowHeightChange={handler.onCustomRowHeightChange}
+              rowResizerHidden={true}
         /></Vertical>
 }
 

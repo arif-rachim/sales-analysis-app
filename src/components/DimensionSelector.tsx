@@ -128,7 +128,9 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             backgroundColor: '#fff',
             padding: '0rem',
             zIndex: 99,
-            boxShadow: '0px 0px 20px -2px #666'
+            borderTopLeftRadius:10,
+            overflow:'hidden',
+            boxShadow: '0px 0px 20px 0px #666'
         }}>
 
         <Vertical style={{height: '33.33%'}}>
