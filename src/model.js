@@ -133,6 +133,14 @@ Sales.init(SalesSchema, {
         {
             name: 'category_brand_name_year_month_city',
             fields: ['category', 'brand', 'name', 'year','month','city']
+        },
+        {
+            name : 'name',
+            fields :['name']
+        },
+        {
+            name : 'year',
+            fields : ['year']
         }
     ]
 });

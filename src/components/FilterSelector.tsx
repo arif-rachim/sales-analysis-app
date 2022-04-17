@@ -1,6 +1,6 @@
 import Vertical from "../layout/Vertical";
 import {emptyObserver, Observer, useObserver} from "../observer/useObserver";
-import {createContext, Dispatch, MutableRefObject, useContext, useRef, useState} from "react";
+import {createContext, Dispatch, MutableRefObject, useContext, useEffect, useRef, useState} from "react";
 import {ObserverValue, useObserverListener, useObserverValue} from "../observer";
 import Horizontal from "../layout/Horizontal";
 import {Grid} from "../grid/Grid";
@@ -60,7 +60,7 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
                         headerCellComponent: CheckboxHeaderCellComponent
                     },
                     {title: 'Name', field: 'label', width: '100%', hAlign: 'left'}
-                ]} data={$gridData.current}/>
+                ]} data={$gridData.current} rowResizerHidden={true}/>
             }}/>
 
         </Vertical>
@@ -101,9 +101,14 @@ function CheckboxCellComponent(props: CellComponentStyledProps) {
     const $selectedItem = context?.current.$selectedItem || emptyObserver;
 
     const [isChecked, setChecked] = useState($selectedItem.current.filteredItems.includes(props.dataItem.id));
+
+    useEffect(() => {
+        setChecked($selectedItem.current.filteredItems.includes(props.dataItem.id));
+    },[$selectedItem, props.dataItem]);
+
     useObserverListener($selectedItem, () => {
         setChecked($selectedItem.current.filteredItems.includes(props.dataItem.id));
-    })
+    });
     const dataItem: LabelValue = props.dataItem;
     const selectedItem: Dimension = $selectedItem.current;
     return <Vertical style={{...props.cellStyle, height: '100%'}} hAlign={'center'} vAlign={'center'}>

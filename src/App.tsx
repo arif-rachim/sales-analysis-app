@@ -12,7 +12,7 @@ import {IoSettingsOutline} from "react-icons/io5";
 
 const FIELD_SEPARATOR: string = '⚮';
 
-const SalesSchema: any = {
+const SalesSchema:any = {
     quantity: {
         name: 'QTY',
         isNumber: true,
@@ -150,7 +150,7 @@ async function renderGrid(props: { filters: Array<Dimension>, columns: Array<Dim
         const [key] = Object.keys(row);
         const keys = key.split('_');
         const val = row[key];
-        const values = val.split('#');
+        const values = (val || '').split('#');
         return keys.reduce((out: any, key: string, index: number) => {
             out[key] = values[index];
             return out;

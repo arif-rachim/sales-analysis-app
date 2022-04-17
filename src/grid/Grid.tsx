@@ -12,7 +12,7 @@ import React, {
     createContext,
     FC,
     MouseEvent as ReactMouseEvent,
-    MutableRefObject,
+    MutableRefObject, ReactElement,
     useCallback,
     useContext,
     useEffect,
@@ -46,13 +46,13 @@ export interface GridProps {
 }
 
 export interface GridColumn extends Column {
-    title: string,
+    title: string|JSX.Element,
     headerCellComponent?: React.FC<HeaderCellComponentProps>,
     filterCellComponent?: React.FC<HeaderCellComponentProps>
 }
 
 export interface GridColumnGroup {
-    title: string,
+    title: string|JSX.Element,
     columns: Array<GridColumnGroup | GridColumn>
 }
 
@@ -410,7 +410,7 @@ function populateHeaderDataMap(columnsProp: Array<GridColumnGroup | GridColumn>,
         if (!headerDataMap.has(rowIdx)) {
             headerDataMap.set(rowIdx, new Map<string, string>());
         }
-        const row: Map<string, string> = (headerDataMap.get(rowIdx) || new Map<string, string>());
+        const row: Map<string, string|ReactElement> = (headerDataMap.get(rowIdx) || new Map<string, ReactElement>());
 
         if ('columns' in column) {
             populateHeaderDataMap(column.columns, headerDataMap, rowIdx + 1, (field: string) => {
@@ -625,7 +625,8 @@ export function Grid(gridProps: GridProps) {
             columns: $columns.current,
             dataSource: dataProp
         }));
-        setData(clonedData);
+        const filteredData = filterDataSource(clonedData, $gridFilter, $columns.current);
+        setData(filteredData);
     });
 
     return <Vertical style={{height: '100%', width: '100%', overflow: 'auto'}}>

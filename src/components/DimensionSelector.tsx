@@ -3,264 +3,61 @@ import {ObserverValue, useObserver, useObserverListener, useObserverValue} from 
 import Vertical from "../layout/Vertical";
 import {Grid} from "../grid/Grid";
 import Horizontal from "../layout/Horizontal";
-import {Observer} from "../observer/useObserver";
+import {emptyObserver, emptySetObserver, Observer} from "../observer/useObserver";
 import {CellComponentStyledProps} from "../grid/Sheet";
-import {IoFilterOutline} from "react-icons/io5";
 import FilterSelector from "./FilterSelector";
 import {Dimension} from "../App";
-import {AiOutlineInsertRowAbove, AiOutlineInsertRowLeft} from "react-icons/ai";
+import {
+    AiOutlineArrowDown,
+    AiOutlineArrowUp,
+    AiOutlineDelete,
+    AiOutlineFilter,
+    AiOutlineInsertRowAbove,
+    AiOutlineInsertRowLeft,
+    AiOutlineNumber
+} from "react-icons/ai";
+import {RiFilterLine} from "react-icons/ri";
+import {BiCube} from "react-icons/bi";
 
-const DimensionSelectorContext = createContext<any>({});
+const DimensionSelectorContext = createContext<{
+    $fieldsGridData: Observer<any>,
+    $focusedItem: Observer<any>,
+    $filtersGridData: Observer<any>,
+    $rowsGridData: Observer<any>,
+    $columnsGridData: Observer<any>,
+    $valuesGridData: Observer<any>,
+    dimensionSelectorProps: DimensionSelectorProps,
+    setFieldsGridData: (value: any) => void,
+    setRowsGridData: (value: any) => void,
+    setColumnsGridData: (value: any) => void,
+    setFiltersGridData: (value: any) => void,
+    setValuesGridData: (value: any) => void,
+    onFilterClicked: () => void
+}>({
+    setColumnsGridData: emptySetObserver,
+    setRowsGridData: emptySetObserver,
+    $focusedItem: emptyObserver,
+    setFiltersGridData: emptySetObserver,
+    $columnsGridData: emptyObserver,
+    $rowsGridData: emptyObserver,
+    $fieldsGridData: emptyObserver,
+    $filtersGridData: emptyObserver,
+    setValuesGridData: emptySetObserver,
+    setFieldsGridData: emptySetObserver,
+    $valuesGridData: emptyObserver,
+    dimensionSelectorProps: {
+        initialDimension: {dimensions: [], columns: [], filters: [], rows: [], values: []},
+        $displayDimensionSelector: emptyObserver,
+        onDimensionChanged: emptySetObserver
+    },
+    onFilterClicked: () => {
+    }
+});
 
 interface DimensionSelectorProps {
     $displayDimensionSelector: Observer<boolean>;
     onDimensionChanged: (props: { columns: Array<Dimension>, rows: Array<Dimension>, filters: Array<Dimension>, values: Array<Dimension> }) => void,
     initialDimension: { filters: Array<Dimension>; columns: Array<Dimension>; rows: Array<Dimension>; values: Array<Dimension>; dimensions: Array<Dimension> };
-}
-
-function ItemCellComponent(props: CellComponentStyledProps) {
-    const dimensionContext = useContext(DimensionSelectorContext);
-    return <Horizontal style={{...props.cellStyle, paddingRight: 0}} vAlign={'center'}>
-        <Vertical style={{flexGrow: 1}}>
-            {props.value}
-        </Vertical>
-        <Vertical style={{fontSize: 16, padding: '0px 3px', borderLeft: '1px solid #ddd'}}
-                  onClick={() => dimensionContext.onFilterClicked(props.dataItem)}>
-            <IoFilterOutline/>
-        </Vertical>
-    </Horizontal>
-}
-
-function setupAction(props: {
-                         $fieldsGridData: Observer<any>,
-                         $focusedItem: Observer<any>,
-                         $filtersGridData: Observer<any>,
-                         $rowsGridData: Observer<any>,
-                         $columnsGridData: Observer<any>,
-                         $valuesGridData: Observer<any>,
-                         dimensionSelectorProps: DimensionSelectorProps,
-                         setFieldsGridData: (value: any) => void,
-                         setRowsGridData: (value: any) => void,
-                         setColumnsGridData: (value: any) => void,
-                         setFiltersGridData: (value: any) => void,
-                         setValuesGridData: (value: any) => void,
-                         setToolBarAction: (value: any) => void
-                     }
-) {
-    return () => {
-        const {
-            dimensionSelectorProps,
-            $columnsGridData,
-            $rowsGridData,
-            $valuesGridData,
-            $filtersGridData,
-            setFieldsGridData,
-            setToolBarAction,
-            setFiltersGridData,
-            setRowsGridData,
-            setValuesGridData,
-            setColumnsGridData,
-            $fieldsGridData,
-            $focusedItem
-        } = props;
-
-        const isInFields = $fieldsGridData.current.indexOf($focusedItem.current) >= 0;
-        const isInFilters = $filtersGridData.current.indexOf($focusedItem.current) >= 0;
-        const isInRows = $rowsGridData.current.indexOf($focusedItem.current) >= 0;
-        const isInColumns = $columnsGridData.current.indexOf($focusedItem.current) >= 0;
-        const isInValues = $valuesGridData.current.indexOf($focusedItem.current) >= 0;
-        const isNumber = $focusedItem.current.isNumber;
-
-        function moveFrom(props: { fromGridSetter: (value: any) => void, toGridSetter: (value: any) => void }) {
-            return () => {
-                props.fromGridSetter((old: any) => old.filter((i: any) => i !== $focusedItem.current));
-                props.toGridSetter((old: any) => [...old, $focusedItem.current]);
-                if (dimensionSelectorProps.onDimensionChanged) {
-                    dimensionSelectorProps.onDimensionChanged({
-                        columns: $columnsGridData.current,
-                        rows: $rowsGridData.current,
-                        filters: $filtersGridData.current,
-                        values: $valuesGridData.current
-                    });
-                }
-            }
-        }
-
-        function moveUpOrDown(setState: any, isUp: boolean) {
-            return () => {
-                setState((old: Array<any>) => {
-                    const currentIndex = old.indexOf($focusedItem.current);
-                    if (isUp && currentIndex > 0) {
-                        const itemBefore = old[currentIndex - 1];
-                        old[currentIndex - 1] = $focusedItem.current;
-                        old[currentIndex] = itemBefore;
-                        return [...old];
-                    }
-                    if (!isUp && (currentIndex < old.length)) {
-                        const itemAfter = old[currentIndex + 1];
-                        old[currentIndex + 1] = $focusedItem.current;
-                        old[currentIndex] = itemAfter;
-                        return [...old];
-                    }
-                    return old;
-                });
-                if (dimensionSelectorProps.onDimensionChanged) {
-                    dimensionSelectorProps.onDimensionChanged({
-                        columns: $columnsGridData.current,
-                        rows: $rowsGridData.current,
-                        filters: $filtersGridData.current,
-                        values: $valuesGridData.current
-                    });
-                }
-            }
-        }
-
-
-        const fieldsGridAction = [
-            {
-                title: <AiOutlineInsertRowLeft/>,
-                onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setRowsGridData})
-            },
-            {
-                title: <AiOutlineInsertRowAbove/>,
-                onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setColumnsGridData})
-            },
-            {
-                title: 'Add to Filters',
-                onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setFiltersGridData})
-            },
-            {
-                title: 'Move Up',
-                onAction: moveUpOrDown(setFieldsGridData, true)
-            },
-            {
-                title: 'Move Down',
-                onAction: moveUpOrDown(setFieldsGridData, false)
-            }
-        ];
-
-        const fieldsGridActionForNumberItem = [
-            {
-                title: 'Add to Values',
-                onAction: moveFrom({fromGridSetter: setFieldsGridData, toGridSetter: setValuesGridData})
-            },
-            {
-                title: 'Move Up',
-                onAction: moveUpOrDown(setFieldsGridData, true)
-            },
-            {
-                title: 'Move Down',
-                onAction: moveUpOrDown(setFieldsGridData, false)
-            }
-        ];
-
-        const valuesGridActionForNumberItem = [
-            {
-                title: <AiOutlineInsertRowLeft/>,
-                onAction: moveFrom({fromGridSetter: setValuesGridData, toGridSetter: setFieldsGridData})
-            },
-            {
-                title: 'Move Up',
-                onAction: moveUpOrDown(setValuesGridData, true)
-            },
-            {
-                title: 'Move Down',
-                onAction: moveUpOrDown(setValuesGridData, false)
-            }
-        ];
-
-        const filtersGridAction = [
-            {
-                title: <AiOutlineInsertRowLeft/>,
-                onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setRowsGridData})
-            },
-            {
-                title: <AiOutlineInsertRowAbove/>,
-                onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setColumnsGridData})
-            },
-            {
-                title: 'Remove Filters',
-                onAction: moveFrom({fromGridSetter: setFiltersGridData, toGridSetter: setFieldsGridData})
-            },
-            {
-                title: 'Move Up',
-                onAction: moveUpOrDown(setFiltersGridData, true)
-            },
-            {
-                title: 'Move Down',
-                onAction: moveUpOrDown(setFiltersGridData, false)
-            }
-        ];
-        const columnGridAction = [
-            {
-                title: <AiOutlineInsertRowLeft/>,
-                onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setRowsGridData})
-            },
-            {
-                title: <AiOutlineInsertRowAbove/>,
-                onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setFieldsGridData})
-            },
-            {
-                title: 'Move to Filters',
-                onAction: moveFrom({fromGridSetter: setColumnsGridData, toGridSetter: setFiltersGridData})
-            },
-            {
-                title: 'Move Up',
-                onAction: moveUpOrDown(setColumnsGridData, true)
-            },
-            {
-                title: 'Move Down',
-                onAction: moveUpOrDown(setColumnsGridData, false)
-            }
-        ];
-        const rowGridAction = [
-            {
-                title: <AiOutlineInsertRowLeft/>,
-                onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setFieldsGridData})
-            },
-            {
-                title: <AiOutlineInsertRowAbove/>,
-                onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setColumnsGridData})
-            },
-            {
-                title: 'Move to Filters',
-                onAction: moveFrom({fromGridSetter: setRowsGridData, toGridSetter: setFiltersGridData})
-            },
-            {
-                title: 'Move Up',
-                onAction: moveUpOrDown(setRowsGridData, true)
-            },
-            {
-                title: 'Move Down',
-                onAction: moveUpOrDown(setRowsGridData, false)
-            }
-        ];
-
-
-        if (isNumber) {
-            if (isInFields) {
-                setToolBarAction(fieldsGridActionForNumberItem);
-            }
-            if (isInValues) {
-                setToolBarAction(valuesGridActionForNumberItem);
-            }
-            return;
-        }
-
-        if (isInFields) {
-            setToolBarAction(fieldsGridAction);
-        }
-        if (isInColumns) {
-            setToolBarAction(columnGridAction);
-        }
-        if (isInFilters) {
-            setToolBarAction(filtersGridAction);
-        }
-        if (isInRows) {
-            setToolBarAction(rowGridAction);
-        }
-
-    };
 }
 
 export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps) {
@@ -293,22 +90,7 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         filteredItems: [],
         name: ''
     });
-    const [$toolBarAction, setToolBarAction] = useObserver<any>([]);
-    useObserverListener([$focusedItem, $fieldsGridData, $filtersGridData, $rowsGridData, $columnsGridData, $valuesGridData], setupAction({
-        $fieldsGridData,
-        $focusedItem,
-        $filtersGridData,
-        $rowsGridData,
-        $columnsGridData,
-        $valuesGridData,
-        dimensionSelectorProps,
-        setFieldsGridData,
-        setRowsGridData,
-        setColumnsGridData,
-        setFiltersGridData,
-        setValuesGridData,
-        setToolBarAction
-    }));
+
 
     const contextProviderValue = useMemo(() => {
         function onFilterClicked() {
@@ -316,34 +98,49 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         }
 
         return {
-            onFilterClicked
+            onFilterClicked,
+            $fieldsGridData,
+            $focusedItem,
+            $filtersGridData,
+            $rowsGridData,
+            $columnsGridData,
+            $valuesGridData,
+            dimensionSelectorProps,
+            setFieldsGridData,
+            setRowsGridData,
+            setColumnsGridData,
+            setFiltersGridData,
+            setValuesGridData
         }
-    }, [setDisplayFilterSelector]);
+    }, [$columnsGridData, $fieldsGridData, $filtersGridData, $focusedItem, $rowsGridData, $valuesGridData, dimensionSelectorProps, setColumnsGridData, setDisplayFilterSelector, setFieldsGridData, setFiltersGridData, setRowsGridData, setValuesGridData]);
     return <DimensionSelectorContext.Provider value={contextProviderValue}><Vertical
         onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
         }}
         style={{
-            bottom: display ? 0 : -500,
-            height: 500,
+            bottom: display ? 0 : -450,
+            height: 450,
             right: 0,
             position: 'absolute',
-            width: 300,
+            width: 500,
             transition: 'bottom 300ms ease-in-out',
             backgroundColor: '#fff',
             padding: '0rem',
             zIndex: 99,
             boxShadow: '0px 0px 20px -2px #666'
-        }} >
+        }}>
 
         <Vertical style={{height: '33.33%'}}>
             <ObserverValue observers={[$fieldsGridData, $focusedItem]} render={() => {
                 return <Grid defaultRowHeight={25} columns={[
-                    {title: 'Dimensions', field: 'name', hAlign: 'left', width: '100%'}
+                    {
+                        title: <Horizontal><Vertical
+                            style={{fontSize: 16, marginRight: 10}}><BiCube/></Vertical>{'Dimensions'}</Horizontal>,
+                        field: 'name', hAlign: 'left', width: '100%', cellComponent: DimensionCellComponent
+                    }
                 ]} data={$fieldsGridData.current} rowResizerHidden={true}
                              defaultHeaderRowHeight={30}
-
                              focusedDataItem={$focusedItem.current}
                              filterHidden={true}
                              onFocusedDataItemChange={(newItem) => setFocusedItem(newItem)}
@@ -355,11 +152,14 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 <ObserverValue observers={[$filtersGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={25} columns={[
                         {
-                            title: 'Filters',
+                            title: <Horizontal><Vertical
+                                style={{fontSize: 16, marginRight: 10}}><RiFilterLine/></Vertical>{'Filters'}
+                            </Horizontal>,
                             field: 'name',
                             width: '100%',
                             hAlign: 'left',
-                            cellComponent: ItemCellComponent
+                            cellComponent: ItemCellComponent,
+                            payload: 'filter'
                         }
                     ]} data={$filtersGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
@@ -373,11 +173,15 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 <ObserverValue observers={[$columnsGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={25} columns={[
                         {
-                            title: 'Columns',
+                            title: <Horizontal><Vertical style={{
+                                fontSize: 16,
+                                marginRight: 10
+                            }}><AiOutlineInsertRowAbove/></Vertical>{'Columns'}</Horizontal>,
                             field: 'name',
                             width: '100%',
                             hAlign: 'left',
-                            cellComponent: ItemCellComponent
+                            cellComponent: ItemCellComponent,
+                            payload: 'column'
                         }
                     ]} data={$columnsGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
@@ -392,7 +196,16 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             <Vertical style={{width: '50%', borderRight: '1px solid #CCC'}}>
                 <ObserverValue observers={[$rowsGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={25} columns={[
-                        {title: 'Rows', field: 'name', width: '100%', hAlign: 'left', cellComponent: ItemCellComponent}
+                        {
+                            title: <Horizontal><Vertical
+                                style={{fontSize: 16, marginRight: 10}}><AiOutlineInsertRowLeft/></Vertical>{'Rows'}
+                            </Horizontal>,
+                            field: 'name',
+                            width: '100%',
+                            hAlign: 'left',
+                            cellComponent: ItemCellComponent,
+                            payload: 'row'
+                        }
                     ]} data={$rowsGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -404,7 +217,13 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             <Vertical style={{width: '50%'}}>
                 <ObserverValue observers={[$valuesGridData, $focusedItem]} render={() => {
                     return <Grid defaultRowHeight={25} columns={[
-                        {title: 'Values', field: 'name', width: '100%', hAlign: 'left'}
+                        {
+                            title: <Horizontal><Vertical
+                                style={{fontSize: 16, marginRight: 10}}><AiOutlineNumber/></Vertical>{'Values'}
+                            </Horizontal>, field: 'name', width: '100%', hAlign: 'left', payload: 'value',
+
+                            cellComponent:ItemCellComponent
+                        }
                     ]} data={$valuesGridData.current} rowResizerHidden={true}
                                  defaultHeaderRowHeight={30}
                                  focusedDataItem={$focusedItem.current}
@@ -414,22 +233,6 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                 }}/>
             </Vertical>
         </Horizontal>
-        <ObserverValue observers={$toolBarAction} render={() => {
-            const toolBarActions = $toolBarAction.current;
-            const width = Math.round((100 / toolBarActions.length));
-            return <Horizontal style={{borderTop: '1px solid #CCC'}}>
-                {toolBarActions.map((ta: any,index:number) => {
-                    return <Vertical hAlign={'center'} style={{
-                        width: `${width}%`,
-                        padding: '1rem',
-                        backgroundColor: '#fff',
-                        borderRight: '1px solid #ccc'
-                    }} key={index} onClick={() => ta.onAction()}>
-                        {ta.title}
-                    </Vertical>
-                })}
-            </Horizontal>
-        }}/>
         <FilterSelector $displayFilterSelector={$displayFilterSelector}
                         setDisplayFilterSelector={setDisplayFilterSelector}
                         $selectedItem={$focusedItem}
@@ -474,4 +277,177 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
     </Vertical>
     </DimensionSelectorContext.Provider>
 
+}
+
+function DimensionCellComponent(cellProps: CellComponentStyledProps) {
+    const context = useContext(DimensionSelectorContext);
+    const isNumber = cellProps.dataItem.isNumber;
+    const isDimension = !isNumber;
+    return <Horizontal style={cellProps.cellStyle} vAlign={'center'}>
+        <Vertical style={{flexGrow: 1}}>
+            {cellProps.value}
+        </Vertical>
+        <Visible visible={isDimension}>
+            <Vertical style={{fontSize: 16, marginRight: 3, cursor: 'pointer'}} title={'Add To Row'} onClick={() => {
+                context.setFieldsGridData((old: Array<any>) => {
+                    return old.filter(i => i.id !== cellProps.dataItem.id);
+                })
+                context.setRowsGridData((old: Array<any>) => {
+                    return [...old, cellProps.dataItem];
+                })
+            }}>
+                <AiOutlineInsertRowLeft/>
+            </Vertical>
+        </Visible>
+        <Visible visible={isDimension}>
+            <Vertical style={{fontSize: 16, marginRight: 3, cursor: 'pointer'}} title={'Add To Column'} onClick={() => {
+                context.setFieldsGridData((old: Array<any>) => {
+                    return old.filter(i => i.id !== cellProps.dataItem.id);
+                })
+                context.setColumnsGridData((old: Array<any>) => {
+                    return [...old, cellProps.dataItem];
+                })
+            }}>
+                <AiOutlineInsertRowAbove/>
+            </Vertical>
+        </Visible>
+        <Visible visible={isDimension}>
+            <Vertical style={{fontSize: 16, marginRight: 3, cursor: 'pointer'}} title={'Add To Filter'} onClick={() => {
+                context.setFieldsGridData((old: Array<any>) => {
+                    return old.filter(i => i.id !== cellProps.dataItem.id);
+                })
+                context.setFiltersGridData((old: Array<any>) => {
+                    return [...old, cellProps.dataItem];
+                })
+            }}>
+                <AiOutlineFilter/>
+            </Vertical>
+        </Visible>
+        <Visible visible={isNumber}>
+            <Vertical style={{fontSize: 16, marginRight: 3, cursor: 'pointer'}} title={'Add To Value'} onClick={() => {
+                context.setFieldsGridData((old: Array<any>) => {
+                    return old.filter(i => i.id !== cellProps.dataItem.id);
+                })
+                context.setValuesGridData((old: Array<any>) => {
+                    return [...old, cellProps.dataItem];
+                })
+            }}>
+                <AiOutlineNumber/>
+            </Vertical>
+        </Visible>
+    </Horizontal>
+}
+
+function Visible({visible, children}: { visible: boolean, children: any }) {
+    if (visible) {
+        return children;
+    }
+    return <Vertical onClick={(event) => event.preventDefault()} style={{opacity:0.1}}>
+        {children}
+    </Vertical>;
+}
+
+function ItemCellComponent(props: CellComponentStyledProps) {
+    const type = props.column.payload;
+    const context = useContext(DimensionSelectorContext);
+    const isNumber = props.dataItem.isNumber;
+    const isDimension = !isNumber;
+    const rowIndex = props.rowIndex;
+    return <Horizontal style={{...props.cellStyle, paddingRight: 0}} vAlign={'center'}>
+        <Vertical style={{flexGrow: 1}}>
+            {props.value}
+        </Vertical>
+
+        <Visible visible={rowIndex > 0}>
+            <Vertical style={{fontSize: 16, padding: '0px 3px', borderLeft: '1px solid #ddd'}}
+                      onClick={() => {
+                          let setState:(prop:any) => void = () => {};
+                          if (type === 'filter') {
+                              setState = context.setFiltersGridData;
+                          }
+                          if (type === 'column') {
+                              setState = context.setColumnsGridData;
+                          }
+                          if (type === 'row') {
+                              setState = context.setRowsGridData;
+                          }
+                          if (type === 'value') {
+                              setState = context.setValuesGridData;
+                          }
+                          setState((old: Array<any>) => {
+                              const itemIndex = old.indexOf(props.dataItem);
+                              const itemAbove = old[itemIndex - 1];
+                              const dataItem = [...old];
+                              dataItem[itemIndex - 1] = props.dataItem;
+                              dataItem[itemIndex] = itemAbove;
+                              return dataItem;
+                          })
+                      }}>
+                <AiOutlineArrowUp/>
+            </Vertical>
+        </Visible>
+        <Visible visible={rowIndex < (props.dataSource.length - 1)}>
+            <Vertical style={{fontSize: 16, padding: '0px 3px', borderLeft: '1px solid #ddd'}}
+                      onClick={() => {
+                          let setState:(prop:any) => void = () => {};
+                          if (type === 'filter') {
+                              setState = context.setFiltersGridData;
+                          }
+                          if (type === 'column') {
+                              setState = context.setColumnsGridData;
+                          }
+                          if (type === 'row') {
+                              setState = context.setRowsGridData;
+                          }
+                          if (type === 'value') {
+                              setState = context.setValuesGridData;
+                          }
+                          setState((old: Array<any>) => {
+                              const itemIndex = old.indexOf(props.dataItem);
+                              const itemBelow = old[itemIndex + 1];
+                              const dataItem = [...old];
+                              dataItem[itemIndex + 1] = props.dataItem;
+                              dataItem[itemIndex] = itemBelow;
+                              return dataItem;
+                          })
+                      }}>
+                <AiOutlineArrowDown/>
+            </Vertical>
+        </Visible>
+        <Visible visible={isDimension}>
+        <Vertical style={{fontSize: 16, padding: '0px 3px', borderLeft: '1px solid #ddd'}}
+                  onClick={() => context.onFilterClicked()}>
+            <RiFilterLine/>
+        </Vertical>
+        </Visible>
+        <Vertical style={{fontSize: 16, marginRight: 3, cursor: 'pointer'}} title={'Delete'} onClick={() => {
+            context.setFieldsGridData((old: Array<any>) => {
+                return [...old,props.dataItem];
+            });
+            if (type === 'filter') {
+                context.setFiltersGridData((old: Array<any>) => {
+                    return old.filter(i => i.id !== props.dataItem.id);
+                })
+            }
+            if (type === 'row') {
+                context.setRowsGridData((old: Array<any>) => {
+                    return old.filter(i => i.id !== props.dataItem.id);
+                })
+            }
+            if (type === 'column') {
+                context.setColumnsGridData((old: Array<any>) => {
+                    return old.filter(i => i.id !== props.dataItem.id);
+                })
+            }
+            if (type === 'value') {
+                context.setValuesGridData((old: Array<any>) => {
+                    return old.filter(i => i.id !== props.dataItem.id);
+                })
+            }
+        }}>
+            <AiOutlineDelete/>
+        </Vertical>
+
+
+    </Horizontal>
 }
