@@ -17,6 +17,7 @@ import {debounce, Dimension, fetchData} from "../App";
 import {CellComponentStyledProps} from "../grid/Sheet";
 import {BiCube} from "react-icons/bi";
 import {AiFillDownCircle} from "react-icons/ai";
+import {MdCheckBox, MdCheckBoxOutlineBlank} from "react-icons/md";
 
 interface LabelValue {
     id: string;
@@ -34,6 +35,7 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
             setGridData([]);
         }
     });
+
     const refreshData = useCallback(debounce(async () => {
         if($displayFilterSelector.current){
             const item = $selectedItem.current;
@@ -76,8 +78,7 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
                                 {'Filter'}
                             </Vertical>
                             <Horizontal onClick={() => setDisplayFilterSelector(false)} style={{cursor:'pointer'}}>
-                                <Vertical style={{fontSize: 16, marginRight: 5}}
-                                          >
+                                <Vertical style={{fontSize: 16, marginRight: 5}}>
                                     <AiFillDownCircle/>
                                 </Vertical>
                                 <Vertical>
@@ -94,38 +95,35 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
 }
 
 function CheckboxHeaderCellComponent() {
-
     const context = useContext(FilterSelectorContext);
-
     const $selectedItem = context?.current.$selectedItem || emptyObserver;
     const [allSelected, setAllSelected] = useState($selectedItem.current.allSelected);
     useObserverListener($selectedItem, () => {
         setAllSelected($selectedItem.current.allSelected);
     })
     return <Vertical style={{backgroundColor: '#ddd', height: '100%'}} vAlign={'center'} hAlign={'center'}>
-        <input type="checkbox" checked={allSelected}
-               onChange={(event) => {
-                   const isChecked = event.target.checked;
-                   const selectedItem: Dimension = $selectedItem.current;
-                   selectedItem.allSelected = isChecked;
-                   if (!isChecked) {
-                       selectedItem.filteredItems = [];
-                   } else {
-                       selectedItem.filteredItems = context?.current.$gridData.current.map<string>(d => d?.id) || [];
-                   }
-                   const onSelectedItemChanged = context?.current.onSelectedItemChanged || (() => {
-                   });
-                   onSelectedItemChanged({...selectedItem});
+        <Checkbox value={allSelected} onChange={(isChecked) => {
+            const selectedItem: Dimension = $selectedItem.current;
+            selectedItem.allSelected = isChecked;
+            if (!isChecked) {
+                selectedItem.filteredItems = [];
+            } else {
+                selectedItem.filteredItems = context?.current.$gridData.current.map<string>(d => d?.id) || [];
+            }
+            const onSelectedItemChanged = context?.current.onSelectedItemChanged || (() => {
+            });
+            onSelectedItemChanged({...selectedItem});
+        }}/>
 
-               }}
-        />
     </Vertical>
 }
 
 function CheckboxCellComponent(props: CellComponentStyledProps) {
     const context = useContext(FilterSelectorContext);
     const $selectedItem = context?.current.$selectedItem || emptyObserver;
-
+    useEffect(() => {
+        console.log('Remount');
+    },[])
     const [isChecked, setChecked] = useState($selectedItem.current.filteredItems.includes(props.dataItem.id));
 
     useEffect(() => {
@@ -138,11 +136,11 @@ function CheckboxCellComponent(props: CellComponentStyledProps) {
     const dataItem: LabelValue = props.dataItem;
     const selectedItem: Dimension = $selectedItem.current;
     return <Vertical style={{...props.cellStyle, height: '100%'}} hAlign={'center'} vAlign={'center'}>
-        <input type="checkbox" checked={isChecked || selectedItem.allSelected}
-               onChange={(event) => {
-                   const isChecked = event.target.checked;
+        <Checkbox value={isChecked}
+               onChange={(value) => {
+                   setChecked(value);
+                   const isChecked = value;
                    const filteredItems = $selectedItem.current.filteredItems;
-
                    if (isChecked) {
                        filteredItems.push(dataItem.id);
                    } else {
@@ -152,8 +150,14 @@ function CheckboxCellComponent(props: CellComponentStyledProps) {
                    const onSelectedItemChanged = context?.current.onSelectedItemChanged || (() => {
                    });
                    onSelectedItemChanged({...$selectedItem.current});
-
                }}
         />
     </Vertical>
+}
+
+function Checkbox(props:{value:boolean,onChange:(val:boolean) => void}){
+    return <Vertical onClick={() => props.onChange(!props.value)} style={{fontSize:20}}>
+        {props.value ? <MdCheckBox/> : <MdCheckBoxOutlineBlank/>}
+    </Vertical>
+
 }

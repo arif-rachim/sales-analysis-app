@@ -115,7 +115,7 @@ export interface Dimension {
     filteredItems: Array<string>;
 }
 
-const dimensions: Array<Dimension> = Object.keys(SalesSchema).map((key: string) => {
+export const dimensions: Array<Dimension> = Object.keys(SalesSchema).map((key: string) => {
     const item = SalesSchema[key];
     return {id: key, ...item}
 })

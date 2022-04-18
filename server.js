@@ -42,7 +42,12 @@ fastify.post('/v1/compoundRequest', async (req) => {
         debugger;
         throw err;
     }
+})
 
+fastify.post('/v1/query',async(req) => {
+    const query = req.body.query;
+    const [data] = await sequelize.query(query);
+    return data;
 })
 
 

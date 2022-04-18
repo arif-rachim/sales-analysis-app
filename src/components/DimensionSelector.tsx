@@ -252,7 +252,6 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
                         setDisplayFilterSelector={setDisplayFilterSelector}
                         $selectedItem={$focusedItem}
                         onSelectedItemChanged={(selectedItem) => {
-
                             const isInFilters = $filtersGridData.current.indexOf($focusedItem.current) >= 0;
                             const isInRows = $rowsGridData.current.indexOf($focusedItem.current) >= 0;
                             const isInColumns = $columnsGridData.current.indexOf($focusedItem.current) >= 0;
