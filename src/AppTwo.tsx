@@ -3,6 +3,8 @@ import {DimensionSelector} from "./components/DimensionSelector";
 import React, {useEffect, useState} from "react";
 import {useObserver} from "./observer";
 import {Dimension, dimensions} from "./App";
+import Horizontal from "./layout/Horizontal";
+import {IoSettingsOutline} from "react-icons/io5";
 
 async function fetchGridData(rows: Array<Dimension>, columns: Array<Dimension>, filters: Array<Dimension>) {
     const condition = [...rows, ...columns].map(d => `"${d.id}"`).join(",");
@@ -28,23 +30,23 @@ export default function AppTwo() {
     });
     const [gridData, setGridData] = useState([]);
     const [gridHeaderData, setGridHeaderData] = useState<Array<any>>([]);
-    const [gridRowsData,setGridRowsData] = useState<Array<any>>([]);
+    const [gridRowsData, setGridRowsData] = useState<Array<any>>([]);
 
     useEffect(() => {
-        const rows = gridData.reduce((acc:Array<any>,rowData:any) => {
-            const mappedRowData:any = {id:''};
-            dimension.rows.forEach((r:Dimension) => {
+        const rows = gridData.reduce((acc: Array<any>, rowData: any) => {
+            const mappedRowData: any = {id: ''};
+            dimension.rows.forEach((r: Dimension) => {
                 mappedRowData[r.id] = rowData[r.id];
-                mappedRowData.id = mappedRowData.id+rowData[r.id]
+                mappedRowData.id = mappedRowData.id + rowData[r.id]
             });
-            if(acc.find((d:any) => d.id === mappedRowData.id) === undefined){
+            if (acc.find((d: any) => d.id === mappedRowData.id) === undefined) {
                 acc.push(mappedRowData);
             }
             return acc;
-        },[]);
+        }, []);
         setGridRowsData(rows);
 
-    },[dimension.rows, gridData]);
+    }, [dimension.rows, gridData]);
 
     useEffect(() => {
         (async () => {
@@ -75,7 +77,7 @@ export default function AppTwo() {
                             lastGridRow.colSpan++;
                             return lastGridRow;
                         } else {
-                            const item = {label: val.label, type: val.type, colSpan: 1,parent};
+                            const item = {label: val.label, type: val.type, colSpan: 1, parent};
                             headerGridRow[index].push(item);
                             return item;
                         }
@@ -99,13 +101,7 @@ export default function AppTwo() {
     return <Vertical style={{height: '100%', overflow: 'hidden', position: 'relative'}} onClick={() => {
         setDisplayDimensionSelector(false);
     }}>
-        <button onClick={(event) => {
-            event.stopPropagation();
-            event.preventDefault();
-            setDisplayDimensionSelector(true)
-        }
-        }>Show Selector
-        </button>
+
         <Vertical style={{height: '100%', overflow: 'auto'}}>
             <table>
                 <thead>
@@ -127,7 +123,7 @@ export default function AppTwo() {
                 </thead>
                 <tbody>
                 {gridRowsData.map((data: any, rowIndex: number) => {
-                    const gridDataForHeader = gridHeaderData[gridHeaderData.length-1];
+                    const gridDataForHeader = gridHeaderData[gridHeaderData.length - 1];
                     return <tr key={`row-${rowIndex}`}>
                         {dimension.rows.map((r: Dimension, colIndex: number) => {
                             return <td key={`row-${rowIndex}-${colIndex}`}>
@@ -137,19 +133,36 @@ export default function AppTwo() {
                         {gridDataForHeader.map((cell: any, index: number) => {
                             const colIndex = index + dimension.rows.length;
 
-                            gridData.find((gd:any) => {
+                            const filteredGridData = gridData.find((gd: any) => {
                                 for (let row of dimension.rows) {
-                                    if(gd[row.id] !== data[row.id]){
+                                    if (gd[row.id] !== data[row.id]) {
                                         return false;
                                     }
                                 }
-                                console.log(cell);
-                                // matching based on this information !
-                                return true;
-                            })
 
-                            return <td key={`row-${rowIndex}-${colIndex}`} >
-                                {cell.label}
+                                function isCellTypeAndLabelMatch(cell: any, gd: any): boolean {
+                                    if (gd[cell.type] !== cell.label) {
+                                        return false;
+                                    }
+                                    if (cell.parent) {
+                                        return isCellTypeAndLabelMatch(cell.parent, gd);
+                                    }
+                                    return true;
+                                }
+
+                                return isCellTypeAndLabelMatch(cell, gd);
+                            });
+
+
+                            return <td key={`row-${rowIndex}-${colIndex}`}>
+                                <Horizontal style={{width:'100%'}}>
+                                <Vertical style={{flexGrow:1}}>
+                                    {(filteredGridData || {value: 0}).value.toFixed(2)}
+                                </Vertical>
+                                <Vertical style={{flexGrow:1}}>
+                                    {(filteredGridData || {quantity: 0}).quantity}
+                                </Vertical>
+                                </Horizontal>
                             </td>
                         })}
 
@@ -159,7 +172,15 @@ export default function AppTwo() {
                 </tbody>
             </table>
         </Vertical>
-
+        <Vertical style={{position:'absolute',bottom:10,right:10,border:'1px solid #ddd',cursor:'pointer',borderRadius:50,width:50,height:50,fontSize:40,backgroundColor:'rgba(0,0,0,0.1)',color:'#333',boxShadow:'0px 0px 5px -3px rgba(0,0,0,0.9)'}} hAlign={'center'}
+                  vAlign={'center'}
+                  onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setDisplayDimensionSelector(true);
+                  }}>
+            <IoSettingsOutline/>
+        </Vertical>
         <DimensionSelector $displayDimensionSelector={$displayDimensionSelector}
                            onDimensionChanged={async (props) => {
                                const {rows, columns, values, filters} = props;
