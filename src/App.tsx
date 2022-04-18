@@ -9,6 +9,7 @@ import {generateUniqueID} from "web-vitals/dist/modules/lib/generateUniqueID";
 import {DimensionSelector} from "./components/DimensionSelector";
 import {PivotGrid} from "./components/PivotGrid";
 import {IoSettingsOutline} from "react-icons/io5";
+import LoadingIndicator from "./LoadingIndicator";
 
 const FIELD_SEPARATOR: string = '⚮';
 
@@ -292,9 +293,10 @@ export default function App() {
                       onClick={() => {
                           setDisplayDimensionSelector(false);
                       }}>
-
+                {/*We disable this for temporary we are going to build new query mechanism to the server !*/}
                 <PivotGrid $gridColumns={$gridColumns}
-                           $gridRows={$gridRows} $pinnedLeftColumnIndex={$pinnedLeftColumnIndex}/></Vertical>
+                           $gridRows={$gridRows} $pinnedLeftColumnIndex={$pinnedLeftColumnIndex}/>
+            </Vertical>
             <Horizontal>
                 <Vertical style={{position:'absolute',bottom:10,right:10,border:'1px solid #ddd',cursor:'pointer',borderRadius:50,width:50,height:50,fontSize:40,backgroundColor:'rgba(0,0,0,0.1)',color:'#333',boxShadow:'0px 0px 5px -3px rgba(0,0,0,0.9)'}} hAlign={'center'}
                           vAlign={'center'}

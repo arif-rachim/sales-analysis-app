@@ -1,10 +1,19 @@
 import Vertical from "../layout/Vertical";
 import {emptyObserver, Observer, useObserver} from "../observer/useObserver";
-import React, {createContext, Dispatch, MutableRefObject, useContext, useEffect, useRef, useState} from "react";
+import React, {
+    createContext,
+    Dispatch,
+    MutableRefObject,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState
+} from "react";
 import {ObserverValue, useObserverListener, useObserverValue} from "../observer";
 import Horizontal from "../layout/Horizontal";
 import {Grid} from "../grid/Grid";
-import {Dimension, fetchData} from "../App";
+import {debounce, Dimension, fetchData} from "../App";
 import {CellComponentStyledProps} from "../grid/Sheet";
 import {BiCube} from "react-icons/bi";
 import {AiFillDownCircle} from "react-icons/ai";
@@ -25,16 +34,18 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
             setGridData([]);
         }
     });
-
-    useObserverListener($selectedItem, async () => {
-        const item = $selectedItem.current;
-        const result = await fetchData('distinct/' + item.id);
-        const values: Array<LabelValue> = result.map((res: any) => {
-            const val = item.id;
-            return {id: res[val], label: res[val]};
-        });
-        setGridData(values);
-    });
+    const refreshData = useCallback(debounce(async () => {
+        if($displayFilterSelector.current){
+            const item = $selectedItem.current;
+            const result = await fetchData('distinct/' + item.id);
+            const values: Array<LabelValue> = result.map((res: any) => {
+                const val = item.id;
+                return {id: res[val], label: res[val]};
+            });
+            setGridData(values);
+        }
+    },100),[]);
+    useObserverListener([$selectedItem,$displayFilterSelector], refreshData);
     const selectorContextRef = useRef({$selectedItem, onSelectedItemChanged, $gridData});
     selectorContextRef.current = {$selectedItem, onSelectedItemChanged, $gridData};
     return <FilterSelectorContext.Provider value={selectorContextRef}>
@@ -75,7 +86,7 @@ export default function FilterSelector(props: { $displayFilterSelector: Observer
                             </Horizontal>
                         </Horizontal>, field: 'label', width: '100%', hAlign: 'left'
                     }
-                ]} data={$gridData.current} rowResizerHidden={true}/>
+                ]} data={$gridData.current} rowResizerHidden={true} sortableHidden={true}/>
             }}/>
 
         </Vertical>

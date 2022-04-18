@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useMemo} from "react";
+import React, {createContext, useCallback, useContext, useMemo} from "react";
 import {ObserverValue, useObserver, useObserverListener, useObserverValue} from "../observer";
 import Vertical from "../layout/Vertical";
 import {Grid} from "../grid/Grid";
@@ -32,7 +32,8 @@ const DimensionSelectorContext = createContext<{
     setColumnsGridData: (value: any) => void,
     setFiltersGridData: (value: any) => void,
     setValuesGridData: (value: any) => void,
-    onFilterClicked: () => void
+    onFilterClicked: () => void,
+    reRender:() => void
 }>({
     setColumnsGridData: emptySetObserver,
     setRowsGridData: emptySetObserver,
@@ -51,7 +52,8 @@ const DimensionSelectorContext = createContext<{
         onDimensionChanged: emptySetObserver
     },
     onFilterClicked: () => {
-    }
+    },
+    reRender:() => {}
 });
 
 interface DimensionSelectorProps {
@@ -91,6 +93,16 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
         name: ''
     });
 
+    const reRender = useCallback(() => {
+        if (dimensionSelectorProps.onDimensionChanged) {
+            dimensionSelectorProps.onDimensionChanged({
+                columns: $columnsGridData.current,
+                rows: $rowsGridData.current,
+                filters: $filtersGridData.current,
+                values: $valuesGridData.current
+            });
+        }
+    },[$columnsGridData, $filtersGridData, $rowsGridData, $valuesGridData, dimensionSelectorProps]);
 
     const contextProviderValue = useMemo(() => {
         function onFilterClicked() {
@@ -110,9 +122,10 @@ export function DimensionSelector(dimensionSelectorProps: DimensionSelectorProps
             setRowsGridData,
             setColumnsGridData,
             setFiltersGridData,
-            setValuesGridData
+            setValuesGridData,
+            reRender
         }
-    }, [$columnsGridData, $fieldsGridData, $filtersGridData, $focusedItem, $rowsGridData, $valuesGridData, dimensionSelectorProps, setColumnsGridData, setDisplayFilterSelector, setFieldsGridData, setFiltersGridData, setRowsGridData, setValuesGridData]);
+    }, [reRender,$columnsGridData, $fieldsGridData, $filtersGridData, $focusedItem, $rowsGridData, $valuesGridData, dimensionSelectorProps, setColumnsGridData, setDisplayFilterSelector, setFieldsGridData, setFiltersGridData, setRowsGridData, setValuesGridData]);
     return <DimensionSelectorContext.Provider value={contextProviderValue}><Vertical
         onClick={(event) => {
             event.preventDefault();
@@ -296,7 +309,8 @@ function DimensionCellComponent(cellProps: CellComponentStyledProps) {
                 })
                 context.setRowsGridData((old: Array<any>) => {
                     return [...old, cellProps.dataItem];
-                })
+                });
+                context.reRender();
             }}>
                 <AiOutlineInsertRowLeft/>
             </Vertical>
@@ -308,7 +322,8 @@ function DimensionCellComponent(cellProps: CellComponentStyledProps) {
                 })
                 context.setColumnsGridData((old: Array<any>) => {
                     return [...old, cellProps.dataItem];
-                })
+                });
+                context.reRender();
             }}>
                 <AiOutlineInsertRowAbove/>
             </Vertical>
@@ -320,7 +335,8 @@ function DimensionCellComponent(cellProps: CellComponentStyledProps) {
                 })
                 context.setFiltersGridData((old: Array<any>) => {
                     return [...old, cellProps.dataItem];
-                })
+                });
+                context.reRender();
             }}>
                 <AiOutlineFilter/>
             </Vertical>
@@ -332,7 +348,8 @@ function DimensionCellComponent(cellProps: CellComponentStyledProps) {
                 })
                 context.setValuesGridData((old: Array<any>) => {
                     return [...old, cellProps.dataItem];
-                })
+                });
+                context.reRender();
             }}>
                 <AiOutlineNumber/>
             </Vertical>
@@ -383,7 +400,8 @@ function ItemCellComponent(props: CellComponentStyledProps) {
                               dataItem[itemIndex - 1] = props.dataItem;
                               dataItem[itemIndex] = itemAbove;
                               return dataItem;
-                          })
+                          });
+                          context.reRender();
                       }}>
                 <AiOutlineArrowUp/>
             </Vertical>
@@ -411,7 +429,8 @@ function ItemCellComponent(props: CellComponentStyledProps) {
                               dataItem[itemIndex + 1] = props.dataItem;
                               dataItem[itemIndex] = itemBelow;
                               return dataItem;
-                          })
+                          });
+                          context.reRender();
                       }}>
                 <AiOutlineArrowDown/>
             </Vertical>
@@ -446,6 +465,7 @@ function ItemCellComponent(props: CellComponentStyledProps) {
                     return old.filter(i => i.id !== props.dataItem.id);
                 })
             }
+            context.reRender();
         }}>
             <AiOutlineDelete/>
         </Vertical>
