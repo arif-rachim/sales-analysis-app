@@ -6,15 +6,19 @@ import {Dimension, dimensions} from "./App";
 import Horizontal from "./layout/Horizontal";
 import {IoSettingsOutline} from "react-icons/io5";
 
-async function fetchGridData(rows: Array<Dimension>, columns: Array<Dimension>, filters: Array<Dimension>) {
+async function fetchGridData(rows: Array<Dimension>, columns: Array<Dimension>, filters: Array<Dimension>, values: Array<Dimension>) {
     const condition = [...rows, ...columns].map(d => `"${d.id}"`).join(",");
     const filtersWhere = [...rows, ...columns, ...filters].filter(d => d.filteredItems.length > 0).map(d => `"${d.id}" in (${d.filteredItems.map(i => `'${i}'`).join(',')})`).join(" and ");
-
+    const valueQuery = values.map((val: Dimension) => `sum(${val.id}) as ${val.id}`).join(' , ');
     const where = filtersWhere ? "where " + filtersWhere : ""
-    const query = `select sum(quantity) as quantity,sum(value) as value,${condition} from sales ${where} group by ${condition}`;
+    const query = `select ${valueQuery},${condition} from sales ${where} group by ${condition}`;
 
     return await fetchPost('query', {query});
 }
+
+function noOp() {
+}
+
 
 export default function AppTwo() {
     const [$displayDimensionSelector, setDisplayDimensionSelector] = useObserver(false);
@@ -44,41 +48,48 @@ export default function AppTwo() {
             }
             return acc;
         }, []);
+        if (rows.length > 100) {
+            console.warn('Rows is more than 100, please consider adding filter');
+            console.table(rows);
+            return;
+        }
         setGridRowsData(rows);
 
     }, [dimension.rows, gridData]);
 
     useEffect(() => {
         (async () => {
-            const {rows, columns, filters} = dimension;
-
-            const result = await fetchGridData(rows, columns, filters);
-            const colCellData = result.reduce((colCellData: any, row: any) => {
+            const {rows, columns, filters, values} = dimension;
+            if (!(values.length > 0)) {
+                return;
+            }
+            const result = await fetchGridData(rows, columns, filters, values);
+            const gridHeaderColumnData = result.reduce((gridHeaderColumn: any, row: any) => {
                 columns.reduce((acc: any, dim: Dimension) => {
                     const dimVal = row[dim.id];
                     acc[dimVal] = acc[dimVal] || {type: dim.id, label: dimVal, children: {}};
                     return acc[dimVal].children;
-                }, colCellData);
-                return colCellData;
+                }, gridHeaderColumn);
+                return gridHeaderColumn;
             }, {});
 
-            const headerGridRow: Array<any> = [];
+            const gridHeaderRowData: Array<any> = [];
 
-            function populateToGridRow(index: number, cellData: any, addParentRow: () => any) {
+            function populateGridHeaderRowData(index: number, cellData: any, addParentRow: () => any) {
                 const isLastIndex = index === columns.length - 1;
                 Object.keys(cellData).forEach((key: string) => {
-                    headerGridRow[index] = headerGridRow[index] || [];
+                    gridHeaderRowData[index] = gridHeaderRowData[index] || [];
                     const val = cellData[key];
 
                     function addOneRow() {
                         const parent = addParentRow();
-                        const lastGridRow = headerGridRow[index][headerGridRow[index].length - 1];
+                        const lastGridRow = gridHeaderRowData[index][gridHeaderRowData[index].length - 1];
                         if (lastGridRow && lastGridRow.label === val.label) {
                             lastGridRow.colSpan++;
                             return lastGridRow;
                         } else {
                             const item = {label: val.label, type: val.type, colSpan: 1, parent};
-                            headerGridRow[index].push(item);
+                            gridHeaderRowData[index].push(item);
                             return item;
                         }
                     }
@@ -87,13 +98,17 @@ export default function AppTwo() {
                         addOneRow();
                     }
 
-                    populateToGridRow(index + 1, val.children, addOneRow);
+                    populateGridHeaderRowData(index + 1, val.children, addOneRow);
                 })
             }
 
-            populateToGridRow(0, colCellData, () => {
-            });
-            setGridHeaderData(headerGridRow);
+            populateGridHeaderRowData(0, gridHeaderColumnData, noOp);
+            if ((gridHeaderRowData[gridHeaderRowData.length - 1].length) > 100) {
+                console.warn('Columns is more than 100, please consider adding filter');
+                console.table(gridHeaderRowData);
+                return;
+            }
+            setGridHeaderData(gridHeaderRowData);
             setGridData(result);
         })();
 
@@ -103,18 +118,18 @@ export default function AppTwo() {
     }}>
 
         <Vertical style={{height: '100%', overflow: 'auto'}}>
-            <table>
+            <table style={{borderCollapse:"collapse"}}>
                 <thead>
 
                 {gridHeaderData.map((row: any, rowIndex: number) => {
-                    return <tr key={`header-row-${rowIndex}`}>
+                    return <tr key={`header-row-${rowIndex}`} style={{border:'1px solid #ccc'}}>
                         {rowIndex === 0 && dimension.rows.map((r: Dimension) => {
-                            return <th key={r.id} rowSpan={dimension.columns.length}>
+                            return <th key={r.id} rowSpan={dimension.columns.length} style={{border:'1px solid #ccc'}}>
                                 {r.name}
                             </th>
                         })}
                         {row.map((cell: any, colIndex: number) => {
-                            return <th key={`header-row-${rowIndex}-${colIndex}`} colSpan={cell.colSpan}>
+                            return <th key={`header-row-${rowIndex}-${colIndex}`} colSpan={cell.colSpan} style={{border:'1px solid #ccc'}}>
                                 {cell.label}
                             </th>
                         })}
@@ -124,16 +139,16 @@ export default function AppTwo() {
                 <tbody>
                 {gridRowsData.map((data: any, rowIndex: number) => {
                     const gridDataForHeader = gridHeaderData[gridHeaderData.length - 1];
-                    return <tr key={`row-${rowIndex}`}>
+                    return <tr key={`row-${rowIndex}`} >
                         {dimension.rows.map((r: Dimension, colIndex: number) => {
-                            return <td key={`row-${rowIndex}-${colIndex}`}>
+                            return <td key={`row-${rowIndex}-${colIndex}`} style={{border:'1px solid #ccc'}}>
                                 {data[r.id]}
                             </td>
                         })}
                         {gridDataForHeader.map((cell: any, index: number) => {
                             const colIndex = index + dimension.rows.length;
 
-                            const filteredGridData = gridData.find((gd: any) => {
+                            const filteredGridData:any = gridData.find((gd: any) => {
                                 for (let row of dimension.rows) {
                                     if (gd[row.id] !== data[row.id]) {
                                         return false;
@@ -149,30 +164,42 @@ export default function AppTwo() {
                                     }
                                     return true;
                                 }
-
                                 return isCellTypeAndLabelMatch(cell, gd);
-                            });
-
-
-                            return <td key={`row-${rowIndex}-${colIndex}`}>
-                                <Horizontal style={{width:'100%'}}>
-                                <Vertical style={{flexGrow:1}}>
-                                    {(filteredGridData || {value: 0}).value.toFixed(2)}
-                                </Vertical>
-                                <Vertical style={{flexGrow:1}}>
-                                    {(filteredGridData || {quantity: 0}).quantity}
-                                </Vertical>
+                            }) || {};
+                            const hasValue = 'value' in filteredGridData;
+                            const hasQuantity = 'quantity' in filteredGridData;
+                            const value = parseInt((filteredGridData || {value: '0'}).value || '0');
+                            const quantity = (filteredGridData || {quantity: 0}).quantity;
+                            return <td key={`row-${rowIndex}-${colIndex}`} style={{border:'1px solid #ccc'}}>
+                                <Horizontal style={{width: '100%'}}>
+                                    {hasQuantity && <Vertical style={{flexGrow: 1}}>
+                                        {numberFormat.format(quantity)}
+                                    </Vertical>}
+                                    {hasValue && <Vertical style={{flexGrow:1}}>
+                                        {numberFormat.format(value)}
+                                    </Vertical>}
                                 </Horizontal>
                             </td>
                         })}
-
-
                     </tr>
                 })}
                 </tbody>
             </table>
         </Vertical>
-        <Vertical style={{position:'absolute',bottom:10,right:10,border:'1px solid #ddd',cursor:'pointer',borderRadius:50,width:50,height:50,fontSize:40,backgroundColor:'rgba(0,0,0,0.1)',color:'#333',boxShadow:'0px 0px 5px -3px rgba(0,0,0,0.9)'}} hAlign={'center'}
+        <Vertical style={{
+            position: 'absolute',
+            bottom: 10,
+            right: 10,
+            border: '1px solid #ddd',
+            cursor: 'pointer',
+            borderRadius: 50,
+            width: 50,
+            height: 50,
+            fontSize: 40,
+            backgroundColor: 'rgba(0,0,0,0.1)',
+            color: '#333',
+            boxShadow: '0px 0px 5px -3px rgba(0,0,0,0.9)'
+        }} hAlign={'center'}
                   vAlign={'center'}
                   onClick={(event) => {
                       event.preventDefault();
@@ -215,3 +242,5 @@ async function fetchPost(action: string, body: any) {
     const result = await window.fetch(address, options)
     return await result.json();
 }
+
+const numberFormat = new Intl.NumberFormat();
