@@ -5,6 +5,8 @@ import {useObserver} from "./observer";
 import {Dimension, dimensions} from "./App";
 import Horizontal from "./layout/Horizontal";
 import {IoSettingsOutline} from "react-icons/io5";
+import {AiOutlineFileExcel} from "react-icons/ai";
+import * as XLSX from "xlsx";
 
 async function fetchGridData(rows: Array<Dimension>, columns: Array<Dimension>, filters: Array<Dimension>, values: Array<Dimension>) {
     const condition = [...rows, ...columns].map(d => `"${d.id}"`).join(",");
@@ -118,18 +120,19 @@ export default function AppTwo() {
     }}>
 
         <Vertical style={{height: '100%', overflow: 'auto'}}>
-            <table style={{borderCollapse:"collapse"}}>
+            <table style={{borderCollapse: "collapse"}} id={'table'}>
                 <thead>
 
                 {gridHeaderData.map((row: any, rowIndex: number) => {
-                    return <tr key={`header-row-${rowIndex}`} style={{border:'1px solid #ccc'}}>
+                    return <tr key={`header-row-${rowIndex}`} style={{border: '1px solid #ccc'}}>
                         {rowIndex === 0 && dimension.rows.map((r: Dimension) => {
-                            return <th key={r.id} rowSpan={dimension.columns.length} style={{border:'1px solid #ccc'}}>
+                            return <th key={r.id} rowSpan={dimension.columns.length} style={{border: '1px solid #ccc'}}>
                                 {r.name}
                             </th>
                         })}
                         {row.map((cell: any, colIndex: number) => {
-                            return <th key={`header-row-${rowIndex}-${colIndex}`} colSpan={cell.colSpan} style={{border:'1px solid #ccc'}}>
+                            return <th key={`header-row-${rowIndex}-${colIndex}`} colSpan={cell.colSpan}
+                                       style={{border: '1px solid #ccc'}}>
                                 {cell.label}
                             </th>
                         })}
@@ -139,16 +142,16 @@ export default function AppTwo() {
                 <tbody>
                 {gridRowsData.map((data: any, rowIndex: number) => {
                     const gridDataForHeader = gridHeaderData[gridHeaderData.length - 1];
-                    return <tr key={`row-${rowIndex}`} >
+                    return <tr key={`row-${rowIndex}`}>
                         {dimension.rows.map((r: Dimension, colIndex: number) => {
-                            return <td key={`row-${rowIndex}-${colIndex}`} style={{border:'1px solid #ccc'}}>
+                            return <td key={`row-${rowIndex}-${colIndex}`} style={{border: '1px solid #ccc'}}>
                                 {data[r.id]}
                             </td>
                         })}
                         {gridDataForHeader.map((cell: any, index: number) => {
                             const colIndex = index + dimension.rows.length;
 
-                            const filteredGridData:any = gridData.find((gd: any) => {
+                            const filteredGridData: any = gridData.find((gd: any) => {
                                 for (let row of dimension.rows) {
                                     if (gd[row.id] !== data[row.id]) {
                                         return false;
@@ -164,18 +167,19 @@ export default function AppTwo() {
                                     }
                                     return true;
                                 }
+
                                 return isCellTypeAndLabelMatch(cell, gd);
                             }) || {};
                             const hasValue = 'value' in filteredGridData;
                             const hasQuantity = 'quantity' in filteredGridData;
                             const value = parseInt((filteredGridData || {value: '0'}).value || '0');
                             const quantity = (filteredGridData || {quantity: 0}).quantity;
-                            return <td key={`row-${rowIndex}-${colIndex}`} style={{border:'1px solid #ccc'}}>
+                            return <td key={`row-${rowIndex}-${colIndex}`} style={{border: '1px solid #ccc'}}>
                                 <Horizontal style={{width: '100%'}}>
                                     {hasQuantity && <Vertical style={{flexGrow: 1}}>
                                         {numberFormat.format(quantity)}
                                     </Vertical>}
-                                    {hasValue && <Vertical style={{flexGrow:1}}>
+                                    {hasValue && <Vertical style={{flexGrow: 1}}>
                                         {numberFormat.format(value)}
                                     </Vertical>}
                                 </Horizontal>
@@ -185,6 +189,7 @@ export default function AppTwo() {
                 })}
                 </tbody>
             </table>
+
         </Vertical>
         <Vertical style={{
             position: 'absolute',
@@ -207,6 +212,38 @@ export default function AppTwo() {
                       setDisplayDimensionSelector(true);
                   }}>
             <IoSettingsOutline/>
+        </Vertical>
+
+        <Vertical style={{
+            position: 'absolute',
+            bottom: 10,
+            right: 70,
+            border: '1px solid #ddd',
+            cursor: 'pointer',
+            borderRadius: 50,
+            width: 50,
+            height: 50,
+            fontSize: 40,
+            backgroundColor: 'rgba(0,0,0,0.1)',
+            color: '#333',
+            boxShadow: '0px 0px 5px -3px rgba(0,0,0,0.9)'
+        }} hAlign={'center'}
+                  vAlign={'center'}
+                  onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      // Acquire Data (reference to the HTML table)
+                      let table_elt = document.getElementById("table");
+                      // Extract Data (create a workbook object from the table)
+                      let workbook = XLSX.utils.table_to_book(table_elt);
+                      // Process Data (add a new row)
+                      let ws = workbook.Sheets["Sheet1"];
+                      XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {origin: -1});
+                      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
+                      XLSX.writeFileXLSX(workbook, "Report.xlsx")
+                      //XLSX.writeFile(workbook, "Report.xlsb");
+                  }}>
+            <AiOutlineFileExcel/>
         </Vertical>
         <DimensionSelector $displayDimensionSelector={$displayDimensionSelector}
                            onDimensionChanged={async (props) => {

@@ -71,7 +71,6 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                             if (!isQuantity) {
                                 continue;
                             }
-                            debugger;
                             const storeCode = storeCodes[colIndex];
                             const storeName = storeCodeName.get(parseInt(storeCode));
                             if (storeName === undefined) {
@@ -79,12 +78,26 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                                 console.log(storeNameActual, storeCode);
                                 throw new Error('Unregistered store :' + storeNameActual + ':' + storeCode);
                             }
+
                             const stNames = storeName.split(',')
                             const dt = months[colIndex].split('.');
                             const groupCode = row[materialGroupCodeColIndex];
                             const quantity = parseInt(row[colIndex].toString() || '0');
+                            let value = 0;
+                            /*
+                             * WARNING! This is the logic that we used to import data for compund data
+                             */
+                            for (let nextColIndex = (colIndex + 1); nextColIndex < row.length; nextColIndex++) {
+                                if(storeCodes[nextColIndex] === storeCodes[colIndex] && months[nextColIndex] === months[colIndex]){
+                                    // horay we found the similar month !
+                                    value = parseFloat(row[nextColIndex]);
+                                }
+                            }
+                            /*
+                             * This following logic is deprecated since we have new logic above
+                             * const value = parseFloat((row[storeCodes.findIndex((value, index) => value === storeCodes[colIndex] && index > colIndex)]).toString() || '0' );
+                             */
 
-                            const value = parseFloat((row[storeCodes.findIndex((value, index) => value === storeCodes[colIndex] && index > colIndex)]).toString() || '0' );
 
                             const price = (quantity > 0 && value > 0 ? (value / quantity) : 0).toPrecision(3)
                             const data = {
@@ -107,7 +120,9 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
                                 price,
                                 elasticity:0
                             }
-                            sales.push(data);
+                            if(data.value > 0 && data.quantity > 0){
+                                sales.push(data);
+                            }
                         }
                     })
                 }
@@ -135,10 +150,11 @@ function loadData({materialGroupCategory, storeCodeCity, storeCodeName, fileHasB
     await Sales.sync();
     console.log('Storing sales', sales.length, 'records');
     await Sales.bulkCreate(sales);
-
     console.log('Storing imported files', importedFiles.length, 'records');
     await ImportedFile.bulkCreate(importedFiles);
     console.log('Data ... stored', sales.length, 'records');
+
+
 })();
 
 function trimToUpperCase(val) {
